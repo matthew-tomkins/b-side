@@ -29,7 +29,7 @@ router.post('/token', async (req, res) => {
       })
   } catch (error) {
     console.error('Token exchange error:', error)
-    res.status(500).json({ error: 'Failed to exchange tooken' })
+    res.status(500).json({ error: 'Failed to exchange token' })
   }
 })
 

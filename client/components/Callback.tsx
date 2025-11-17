@@ -31,7 +31,7 @@ export default function Callback () {
           setError('Failed to authenticate')
         })
       }
-  }, [useSearchParams, navigate])
+  }, [searchParams, navigate])
 
   if (error) {
     return (
