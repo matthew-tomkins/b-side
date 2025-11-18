@@ -1,25 +1,13 @@
-import { useEffect, useState } from 'react'
+
 import { getTopArtists } from '../services/spotify'
 import { SpotifyArtist } from '../models/spotify'
+import { useSpotifyData } from '../hooks/useSpotifyData'
 
 export default function TopArtists() {
-  const [artists, setArtists] = useState<SpotifyArtist[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    getTopArtists('medium_term', 10)
-      .then((data) => {
-        console.log('Artist data:', data)
-        setArtists(data.items)
-        setLoading(false)
-      })
-      .catch((err) => {
-        console.error('Failed to get top artists:', err)
-        setError('Could not load artists')
-        setLoading(false)
-      })
-  }, [])
+  const { items: artists, loading, error } = useSpotifyData<{ items: SpotifyArtist[] }, SpotifyArtist>({
+    fetchFn: () => getTopArtists('medium_term', 10),
+    extractItems: (data) => data.items,
+  })
 
   if (loading) {
     return <div>

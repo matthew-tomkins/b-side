@@ -1,26 +1,45 @@
-import { useEffect, useState } from "react"
 import { getTopTracks } from "../services/spotify"
 import { SpotifyTrack } from "../models/spotify"
+import { useSpotifyData } from "../hooks/useSpotifyData"
 
-export default function TopTracks () {
-  const [tracks, setTracks] = useState<SpotifyTrack[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    getTopTracks('medium_term', 10)
-      .then((data) => {
-        setTracks(data.items)
-        setLoading(false)
-      })
-      .catch((err) => {
-        console.error('Failed to get top tracks:', err)
-        setLoading(false)
-      })
-  }, [])
+export default function TopTracks() {
+  const { items: tracks, loading, error } = useSpotifyData<
+    { items: SpotifyTrack[] },
+    SpotifyTrack
+  >({
+    fetchFn: () => getTopTracks('medium_term', 10),
+    extractItems: (data) => data.items,
+  })
 
   if (loading) {
-    return <div className="text-gray-600">Loading tracks...</div>
+    return (
+      <div>
+        <h2 className="mb-4 text-2xl font-bold">Your Top Tracks</h2>
+        <p className="text-gray-600">Loading tracks...</p>
+      </div>
+    )
   }
+
+  if (error) {
+    return (
+      <div>
+        <h2 className="mb-4 text-2xl font-bold">Your Top Tracks</h2>
+        <p className="text-red-600">{error}</p>
+      </div>
+    )  
+  }
+
+  if (tracks.length === 0 ) {
+    return (
+      <div>
+        <h2 className="mb-4 text-2xl font-bold">Your Top Tracks</h2>
+        <p className="text-gray-600">
+          No top tracks found. Listen to more music on Spotify!
+        </p>
+      </div>
+    )
+  }
+
 
   return (
     <div>
