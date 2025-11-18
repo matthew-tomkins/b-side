@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router"
 import { getCurrentUser } from "../services/spotify"
+import { SpotifyUser } from "../models/spotify"
 
 export default function Dashboard() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<SpotifyUser | null>(null)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 

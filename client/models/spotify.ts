@@ -1,0 +1,25 @@
+export interface SpotifyUser {
+  display_name: string
+  email: string
+  id: string
+  images: Array<{ url: string }>
+}
+
+export interface SpotifyTrack {
+  id: string
+  name: string
+  artists: Array<{ name: string }>
+  album: {
+    name: string
+    images: Array<{ url: string }>
+  }
+  popularity: number
+}
+
+export interface SpotifyArtist {
+  id: string
+  name: string
+  genres: string[]
+  images: Array<{ url: string }>
+  popularity: number
+}

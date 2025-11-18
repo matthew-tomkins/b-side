@@ -1,4 +1,5 @@
 import request from 'superagent'
+import { SpotifyUser, SpotifyTrack, SpotifyArtist } from '../models/spotify'
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1'
 
@@ -6,7 +7,7 @@ function getAccessToken(): string | null {
   return localStorage.getItem('spotify_access_token')
 }
 
-export async function getCurrentUser() {
+export async function getCurrentUser(): Promise<SpotifyUser> {
   const token = getAccessToken()
   if (!token) throw new Error('No access token')
   
@@ -17,7 +18,10 @@ export async function getCurrentUser() {
   return response.body
 }
 
-export async function getTopTracks(timeRange = 'medium_term', limit = 20) {
+export async function getTopTracks(
+    timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term',
+    limit = 20
+ ): Promise<{ items: SpotifyTrack[] }> {
   const token = getAccessToken()
   if (!token) throw new Error('No access token')
 
@@ -29,7 +33,10 @@ export async function getTopTracks(timeRange = 'medium_term', limit = 20) {
   return response.body
 }
 
-export async function getTopArtists(timeRange = 'medium_term', limit = 20) {
+export async function getTopArtists(
+    timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term',
+    limit = 20
+ ): Promise<{ items: SpotifyArtist[] }> {
   const token = getAccessToken()
   if (!token) throw new Error('No access token')
 
