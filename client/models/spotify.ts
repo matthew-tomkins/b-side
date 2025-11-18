@@ -23,3 +23,14 @@ export interface SpotifyArtist {
   images: Array<{ url: string }>
   popularity: number
 }
+
+export interface AudioFeatures {
+  id: string
+  energy: number
+  danceability: number
+  valence: number
+  tempo: number
+  acousticness: number
+  instrumentalness: number
+  speechiness: number
+}

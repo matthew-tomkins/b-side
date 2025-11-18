@@ -1,5 +1,5 @@
 import request from 'superagent'
-import { SpotifyUser, SpotifyTrack, SpotifyArtist } from '../models/spotify'
+import { SpotifyUser, SpotifyTrack, SpotifyArtist, AudioFeatures } from '../models/spotify'
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1'
 
@@ -69,21 +69,47 @@ export async function getSavedTracks(
 
 export async function getAudioFeatures(
   trackIds: string[]
-): Promise<{
-    audio_features: Array<{
-      id: string
-      energy: number
-      danceability: number
-      valence: number
-      tempo: number
-      acousticness: number
-      instrumentalness: number
-      speechiness: number
-      }>
-  }> {
-  const response = await request
+): Promise<{ audio_features: AudioFeatures[] }> {
+    const response = await request
     .get(`${SPOTIFY_API_BASE}/audio-features`)
     .query({ ids: trackIds.join(',') })
+    .set(getAuthHeaders())
   
+  return response.body
+}
+
+export async function getRecommendations({
+  seedArtists,
+  seedTracks,
+  limit = 20,
+  targetPopularity,
+}: {
+  seedArtists?: string[]
+  seedTracks?: string[]
+  limit?: number
+  targetPopularity?: number
+}): Promise<{tracks: SpotifyTrack[] }> {
+  const params: Record<string, string | number> = {
+    limit,
+  }
+
+  if (seedTracks && seedTracks.length > 0) {
+    params.seed_tracks = seedTracks.join(',')
+  }
+
+  if (seedArtists && seedArtists.length > 0) {
+    params.seed_artists = seedArtists.join(',')
+  }
+
+  if (targetPopularity !== undefined) {
+    params.max_popularity = targetPopularity +20
+    params.min_popularity = Math.max(0, targetPopularity - 20)
+  }
+  
+  const response = await request
+    .get(`${SPOTIFY_API_BASE}/recommendations`)
+    .query(params)
+    .set(getAuthHeaders())
+
   return response.body
 }

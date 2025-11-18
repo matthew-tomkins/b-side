@@ -4,6 +4,7 @@ import { getCurrentUser } from "../services/spotify"
 import { SpotifyUser } from "../models/spotify"
 import TopArtists from "./TopArtists"
 import TopTracks from "./TopTracks"
+import Recommendations from "./Recommendations"
 
 export default function Dashboard() {
   const [user, setUser] = useState<SpotifyUser | null>(null)
@@ -45,6 +46,7 @@ export default function Dashboard() {
           <div className="space-y-8">
             <TopArtists />
             <TopTracks />
+            <Recommendations />
           </div>
         </div>
     </div>
