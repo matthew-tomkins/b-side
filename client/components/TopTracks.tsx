@@ -1,6 +1,8 @@
 import { getTopTracks } from "../services/spotify"
 import { SpotifyTrack } from "../models/spotify"
 import { useSpotifyData } from "../hooks/useSpotifyData"
+import Section from './Section'
+import { LoadingState, ErrorState, EmptyState } from './StateMessages'
 
 export default function TopTracks() {
   const { items: tracks, loading, error } = useSpotifyData<
@@ -13,37 +15,31 @@ export default function TopTracks() {
 
   if (loading) {
     return (
-      <div>
-        <h2 className="mb-4 text-2xl font-bold">Your Top Tracks</h2>
-        <p className="text-gray-600">Loading tracks...</p>
-      </div>
+      <Section title="Your Top Tracks">
+        <LoadingState message="Loading tracks..." />
+      </Section>
     )
   }
 
   if (error) {
     return (
-      <div>
-        <h2 className="mb-4 text-2xl font-bold">Your Top Tracks</h2>
-        <p className="text-red-600">{error}</p>
-      </div>
+      <Section title="Your Top Tracks">
+        <ErrorState message={error} />
+      </Section>
     )  
   }
 
   if (tracks.length === 0 ) {
     return (
-      <div>
-        <h2 className="mb-4 text-2xl font-bold">Your Top Tracks</h2>
-        <p className="text-gray-600">
-          No top tracks found. Listen to more music on Spotify!
-        </p>
-      </div>
+      <Section title="Your Top Tracks">
+        <EmptyState message="No top tracks found. Listen to more music on Spotify!" />
+      </Section>
     )
   }
 
 
   return (
-    <div>
-      <h2 className="mb-4 text-2xl font-bold">Your Top Tracks</h2>
+    <Section title="Your Top Tracks">
       <div className="space-y-3">
         {tracks.map((track, index) => (
           <div
@@ -69,6 +65,6 @@ export default function TopTracks() {
           </div>
         ))}
       </div>
-    </div>
+    </Section>
   )
 }

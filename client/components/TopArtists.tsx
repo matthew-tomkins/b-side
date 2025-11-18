@@ -2,6 +2,8 @@
 import { getTopArtists } from '../services/spotify'
 import { SpotifyArtist } from '../models/spotify'
 import { useSpotifyData } from '../hooks/useSpotifyData'
+import Section from './Section'
+import { LoadingState, ErrorState, EmptyState } from './StateMessages'
 
 export default function TopArtists() {
   const { items: artists, loading, error } = useSpotifyData<{ items: SpotifyArtist[] }, SpotifyArtist>({
@@ -10,40 +12,31 @@ export default function TopArtists() {
   })
 
   if (loading) {
-    return <div>
-      <h2 className="mb-4 text-2xl font-bold">
-        Your Top Artists
-      </h2>
-      <p className="text-gray-600">Loading artists...</p>
-    </div>
-
+    return (
+      <Section title="Your Top Artists">
+        <LoadingState message="Loading artists..." />
+      </Section>
+    )
   }
 
   if (error) {
     return (
-      <div>
-        <h2 className="mb-4 text-2xl font-bold">Your Top Artists</h2>
-        <p className="text-red-600">{error}</p>
-      </div>
+      <Section title="Your Top Artists">
+        <ErrorState message={error} />
+      </Section>
     )
   }
 
   if (artists.length === 0) {
     return (
-      <div>
-        <h2 className="mb-4 text-2xl font-bold">Your Top Artists</h2>
-        <p className="text-gray-600">
-          No top artists found. Listen to more music on Spotify!
-        </p>
-      </div>
+      <Section title="Your Top Artists">
+        <EmptyState message="No top artists found. Listen to more music on Spotify!" />
+      </Section>
     )
   }
 
   return (
-    <div>
-      <h2 className="mb-4 text-2xl font-bold">
-        Your Top Artists
-      </h2>
+    <Section title="Your Top Artists">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
         {artists.map((artist) => (
           <div
@@ -70,6 +63,6 @@ export default function TopArtists() {
           </div>
         ))}
       </div>
-    </div>
+    </Section>
   )
 }
