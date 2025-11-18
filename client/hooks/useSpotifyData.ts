@@ -23,7 +23,6 @@ export function useSpotifyData<T, I = unknown>({
   useEffect(() => {
     fetchFn()
       .then((result) => {
-        console.log('Spotify data:', result)
         setData(result)
         setLoading(false)
       })
