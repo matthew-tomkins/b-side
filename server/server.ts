@@ -6,7 +6,7 @@ import authRoutes from './routes/auth.ts'
 const server = express()
 
 server.use(express.json())
-server.use(cors('*' as CorsOptions))
+server.use(cors())
 
 server.use('/api/auth', authRoutes)
 

@@ -7,7 +7,7 @@ import { LoadingState, ErrorState, EmptyState } from './StateMessages'
 
 export default function TopArtists() {
   const { items: artists, loading, error } = useSpotifyData<{ items: SpotifyArtist[] }, SpotifyArtist>({
-    fetchFn: () => getTopArtists('medium_term', 10),
+    fetchFn: () => getTopArtists('long_term', 10),
     extractItems: (data) => data.items,
   })
 

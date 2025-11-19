@@ -9,7 +9,7 @@ export default function TopTracks() {
     { items: SpotifyTrack[] },
     SpotifyTrack
   >({
-    fetchFn: () => getTopTracks('medium_term', 10),
+    fetchFn: () => getTopTracks('short_term', 10),
     extractItems: (data) => data.items,
   })
 

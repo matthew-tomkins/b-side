@@ -106,10 +106,13 @@ export async function getRecommendations({
     params.min_popularity = Math.max(0, targetPopularity - 20)
   }
   
+  const token = getAccessToken()
+  if (!token) throw new Error('No access token')
+
   const response = await request
-    .get(`${SPOTIFY_API_BASE}/recommendations`)
+    .get('http://localhost:3000/api/auth/recommendations')
     .query(params)
-    .set(getAuthHeaders())
+    .set('Authorization', `Bearer ${token}`)
 
   return response.body
 }
