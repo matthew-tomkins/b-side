@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { getRecommendations, getTopTracks, getTopArtists } from "../services/spotify"
+import { getRecentlyPlayed, getSavedTracks } from "../services/spotify"
 import { SpotifyTrack } from '../models/spotify'
 import Section from "./Section"
 import { LoadingState, ErrorState, EmptyState } from './StateMessages'
@@ -10,43 +10,43 @@ export default function Recommendations() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function fetchRecommendations() {
+    async function fetchCustomRecommendations() {
       try {
-        //  Get user's top tracks and artists as seeds
-        const [topTracks, topArtists] = await Promise.all([
-          getTopTracks('medium_term', 5),
-          getTopArtists('medium_term', 5),
+        // Get user's recently played and saved tracks
+        const [recentlyPlayed, savedTracks] = await Promise.all([
+          getRecentlyPlayed(50),
+          getSavedTracks(50)
         ])
 
-        // Get recommendations with lower popularity (fringe music!)
-        const seedTrackIds = topTracks.items.slice(0, 3).map((t) => t.id)
-        const seedArtistIds = topArtists.items.slice(0, 2).map((a) => a.id)
+        // Combine all tracks
+        const recentTracks = recentlyPlayed.items.map(item => item.track)
+        const libraryTracks = savedTracks.items.map(item => item.track)
+        const allTracks = [...recentTracks, ...libraryTracks]
 
-        console.log('Seed Track IDs:', seedTrackIds)
-        console.log('Seed Artist IDs:', seedArtistIds)
-
-        if (seedTrackIds.length === 0 && seedArtistIds.length === 0) {
-          throw new Error('No listening history available')
-        }
-
-        const recs = await getRecommendations({
-          seedTracks: ['3n3Ppam7vgaVa1iaRUc9Lp'],
-          // seedTracks: seedTrackIds.length > 0 ? seedTrackIds : undefined,
-          // seedArtists: seedArtistIds.length > 0 ? seedArtistIds : undefined,
-          limit: 10,
-          targetPopularity: 30,
+        // Deduplicate by track ID
+        const uniqueTracks = new Map<string, SpotifyTrack>()
+        allTracks.forEach(track => {
+          if (!uniqueTracks.has(track.id)) {
+            uniqueTracks.set(track.id, track)
+          }
         })
 
-        setRecommendations(recs.tracks)
+        // Filter for "B-Sides" (low popularity tracks)
+        const bSides = Array.from(uniqueTracks.values())
+          .filter(track => track.popularity < 40) // Low popularity = hidden gems
+          .sort((a, b) => a.popularity - b.popularity) // Sort by least popular first
+          .slice(0, 10) // Take top 10
+
+        setRecommendations(bSides)
         setLoading(false)
       } catch (err) {
-        console.error('Failed to get recommendations:', err)
+        console.error('Failed to get custom recommendations:', err)
         setError('Could not load recommendations')
         setLoading(false)
       }
     }
 
-    fetchRecommendations()
+    fetchCustomRecommendations()
   }, [])
 
   if (loading) {
@@ -68,12 +68,10 @@ export default function Recommendations() {
   if (recommendations.length === 0) {
     return (
       <Section title="Recommended B-Sides">
-        <EmptyState message="No recommendations found. Try listening to more music!" />
+        <EmptyState message="No B-Sides found in your library. Try saving more music!" />
       </Section>
     )
   }
-
-
 
   return (
     <Section title="Recommended B-Sides">

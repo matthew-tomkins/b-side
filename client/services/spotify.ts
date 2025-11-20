@@ -45,6 +45,28 @@ export async function getTopArtists(
   return response.body
 }
 
+export async function getRelatedArtists(
+  artistId: string
+): Promise<{ artists: SpotifyArtist[] }> {
+  const response = await request
+    .get(`${SPOTIFY_API_BASE}/artists/${artistId}/related-artists`)
+    .set(getAuthHeaders())
+  
+  return response.body
+}
+
+export async function getArtistTopTracks(
+  artistId: string,
+  market: string = 'NZ'
+): Promise<{ tracks: SpotifyTrack[] }> {
+  const response = await request
+    .get(`${SPOTIFY_API_BASE}/artists/${artistId}/top-tracks`)
+    .query({ market })
+    .set(getAuthHeaders())
+  
+  return response.body
+}
+
 export async function getRecentlyPlayed(
   limit = 50
 ): Promise<{ items: Array<{ track: SpotifyTrack; played_at: string }> }> {

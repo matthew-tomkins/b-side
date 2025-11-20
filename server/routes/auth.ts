@@ -88,7 +88,7 @@ router.get('/recommendations', async (req, res) => {
       res.json(response.body)
 
   } catch (error: unknown) {
-    const err = error as { response?: { text?: string; body?: any }; status?: number; message?: string }
+    const err = error as { response?: { text?: string; body?: unknown }; status?: number; message?: string }
     console.error('Full error:', err)
     console.error('Error status:', err.status)
     console.error('Error response body:', err.response?.body)
