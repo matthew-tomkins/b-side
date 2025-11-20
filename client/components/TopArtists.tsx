@@ -1,5 +1,5 @@
 
-import { getTopArtists } from '../services/spotify'
+import { getTopArtists } from '../services/spotify/index'
 import { SpotifyArtist } from '../models/spotify'
 import { useSpotifyData } from '../hooks/useSpotifyData'
 import Section from './Section'

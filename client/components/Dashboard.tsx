@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router"
-import { getCurrentUser } from "../services/spotify"
+import { getCurrentUser } from "../services/spotify/index"
 import { SpotifyUser } from "../models/spotify"
 import TopArtists from "./TopArtists"
 import TopTracks from "./TopTracks"

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { getRecentlyPlayed, getSavedTracks } from "../services/spotify"
+import { getRecentlyPlayed, getSavedTracks } from "../services/spotify/index"
 import { SpotifyTrack } from '../models/spotify'
 import Section from "./Section"
 import { LoadingState, ErrorState, EmptyState } from './StateMessages'
@@ -19,8 +19,8 @@ export default function Recommendations() {
         ])
 
         // Combine all tracks
-        const recentTracks = recentlyPlayed.items.map(item => item.track)
-        const libraryTracks = savedTracks.items.map(item => item.track)
+        const recentTracks = recentlyPlayed.items.map((item: { track: SpotifyTrack; played_at: string }) => item.track)
+        const libraryTracks = savedTracks.items.map((item: { track: SpotifyTrack; added_at: string }) => item.track)
         const allTracks = [...recentTracks, ...libraryTracks]
 
         // Deduplicate by track ID

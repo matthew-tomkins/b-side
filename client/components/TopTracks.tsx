@@ -1,4 +1,4 @@
-import { getTopTracks } from "../services/spotify"
+import { getTopTracks } from "../services/spotify/index"
 import { SpotifyTrack } from "../models/spotify"
 import { useSpotifyData } from "../hooks/useSpotifyData"
 import Section from './Section'
