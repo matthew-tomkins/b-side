@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
-import { getRecentlyPlayed, getSavedTracks } from "../services/spotify/index"
+import { getRecentlyPlayed, getSavedTracks, createPlaylist, addTracksToPlaylist } from "../services/spotify/index"
+import { getCurrentUser } from "../services/spotify/index"
 import { SpotifyTrack } from '../models/spotify'
 import Section from "./Section"
 import { LoadingState, ErrorState, EmptyState } from './StateMessages'
@@ -8,6 +9,39 @@ export default function Recommendations() {
   const [recommendations, setRecommendations] = useState<SpotifyTrack[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [playlistUrl, setPlaylistUrl] = useState<string | null>(null)
+
+  async function handleSavePlaylist() {
+    setSaving(true)
+    setPlaylistUrl(null)
+
+    try {
+      // Get current user ID
+      const user = await getCurrentUser()
+      
+      // Create playlist
+      const playlist = await createPlaylist(
+        user.id,
+        'B-Side Discoveries',
+        'Hidden gems found by B-Side',
+        true
+      )
+
+      // Convert track IDs to Spotify URIs
+      const trackUris = recommendations.map(track => `spotify:track:${track.id}`)
+
+      // Add tracks to playlist
+      await addTracksToPlaylist(playlist.id, trackUris)
+
+      setPlaylistUrl(playlist.external_urls.spotify)
+    } catch (err) {
+      console.error('Failed to save playlist:', err)
+      setError('Failed to save playlist')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   useEffect(() => {
     async function fetchCustomRecommendations() {
@@ -103,6 +137,27 @@ export default function Recommendations() {
           </div>
         ))}
       </div>
+      <div className="mt-6">
+        {!playlistUrl ? (
+          <button
+            onClick={handleSavePlaylist}
+            disabled={saving || recommendations.length === 0}
+            className="w-full rounded-lg bg-green-500 px-6 py-3 font-semibold text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? 'Saving...' : 'Save as Spotify Playlist'}
+          </button>
+        ) : (
+          <a
+            href={playlistUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full rounded-lg bg-green-600 px-6 py-3 text-center font-semibold text-white hover:bg-green-700"
+          >
+            View Playlist on Spotify →
+          </a>
+        )}
+      </div>
+      
     </Section>
   )
 }
