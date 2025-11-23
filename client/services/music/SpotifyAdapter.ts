@@ -1,7 +1,7 @@
 import request from 'superagent'
 import { getAuthHeaders } from '../spotify/auth'
 import { MusicPlatform, Track, AudioFeatures, SearchParams } from './types'
-import { SpotifyArtist, SpotifyTrack } from '../../models/spotify'
+import { SpotifyTrack } from '../../models/spotify'
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1'
 
