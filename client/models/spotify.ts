@@ -8,8 +8,9 @@ export interface SpotifyUser {
 export interface SpotifyTrack {
   id: string
   name: string
-  artists: Array<{ name: string }>
+  artists: Array<{ id: string; name: string }>
   album: {
+    id: string
     name: string
     images: Array<{ url: string }>
   }
