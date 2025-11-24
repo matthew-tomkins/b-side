@@ -1,16 +1,20 @@
-import { useEffect, useState } from "react"
-import { getRecentlyPlayed, getSavedTracks, createPlaylist, addTracksToPlaylist } from "../services/spotify/index"
-import { getCurrentUser } from "../services/spotify/index"
-import { SpotifyTrack } from '../models/spotify'
-import Section from "./Section"
+import { useEffect, useState } from 'react'
+import { getCurrentUser, createPlaylist, addTracksToPlaylist } from '../services/spotify/index'
+import { Track } from '../services/music/types'
+import { SpotifyAdapter } from '../services/music/SpotifyAdapter'
+import { DiscoveryEngine } from '../services/music/DiscoveryEngine'
+import Section from './Section'
 import { LoadingState, ErrorState, EmptyState } from './StateMessages'
 
 export default function Recommendations() {
-  const [recommendations, setRecommendations] = useState<SpotifyTrack[]>([])
+  const [recommendations, setRecommendations] = useState<Track[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [playlistUrl, setPlaylistUrl] = useState<string | null>(null)
+  const [selectedSeeds, setSelectedSeeds] = useState<Track[]>([])
+  const [maxPopularity, setMaxPopularity] = useState(40)
+  const [isSearchingSeeded, setIsSearchingSeeded] = useState(false)
 
   async function handleSavePlaylist() {
     setSaving(true)
@@ -43,33 +47,55 @@ export default function Recommendations() {
     }
   }
 
+  function toggleSeedSelection(track: Track) {
+    setSelectedSeeds(prev => {
+      const isSelected = prev.some(t => t.id === track.id)
+      if (isSelected) {
+        return prev.filter(t => t.id !== track.id)
+      } else if (prev.length < 3) {
+        // Max 3 seeds
+        return [...prev, track]
+      }
+      return prev
+    })
+  }
+
+  async function handleFindSimilar() {
+    if (selectedSeeds.length === 0) return
+
+    setIsSearchingSeeded(true)
+    setLoading(true)
+
+    try {
+      const spotify = new SpotifyAdapter()
+      const engine = new DiscoveryEngine(spotify)
+
+      console.log('Searching with max popularity:', maxPopularity) // Debug log
+      const similar = await engine.findSimilar(selectedSeeds, 20, maxPopularity) // Add maxPopularity!
+
+      setRecommendations(similar)
+      setSelectedSeeds([]) // Clear selection
+    } catch (err) {
+      console.error('Failed to find similar tracks:', err)
+      setError('Could not load similar tracks')
+    } finally {
+      setIsSearchingSeeded(false)
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     async function fetchCustomRecommendations() {
       try {
-        // Get user's recently played and saved tracks
-        const [recentlyPlayed, savedTracks] = await Promise.all([
-          getRecentlyPlayed(50),
-          getSavedTracks(50)
-        ])
+        // Initialize platform adapter and discovery engine
+        const spotify = new SpotifyAdapter()
+        const engine = new DiscoveryEngine(spotify)
 
-        // Combine all tracks
-        const recentTracks = recentlyPlayed.items.map((item: { track: SpotifyTrack; played_at: string }) => item.track)
-        const libraryTracks = savedTracks.items.map((item: { track: SpotifyTrack; added_at: string }) => item.track)
-        const allTracks = [...recentTracks, ...libraryTracks]
-
-        // Deduplicate by track ID
-        const uniqueTracks = new Map<string, SpotifyTrack>()
-        allTracks.forEach(track => {
-          if (!uniqueTracks.has(track.id)) {
-            uniqueTracks.set(track.id, track)
-          }
+        // Find B-Sides using the discovery engine
+        const bSides = await engine.findBSides({
+          genre: 'electronic', // You can make this dynamic later
+          limit: 10
         })
-
-        // Filter for "B-Sides" (low popularity tracks)
-        const bSides = Array.from(uniqueTracks.values())
-          .filter(track => track.popularity < 40) // Low popularity = hidden gems
-          .sort((a, b) => a.popularity - b.popularity) // Sort by least popular first
-          .slice(0, 10) // Take top 10
 
         setRecommendations(bSides)
         setLoading(false)
@@ -107,57 +133,106 @@ export default function Recommendations() {
     )
   }
 
-  return (
-    <Section title="Recommended B-Sides">
-      <div className="space-y-3">
-        {recommendations.map((track, index) => (
-          <div
-            key={track.id}
-            className="flex items-center gap-4 rounded-lg bg-gray-100 p-3 transition hover:bg-gray-200"
-          >
-            <span className="text-lg font-bold text-gray-400">
-              {index + 1}
-            </span>
-            {track.album.images[0] && (
-              <img
-                src={track.album.images[0].url}
-                alt={track.album.name}
-                className="h-16 w-16 rounded object-cover"
-              />
-            )}
-            <div className="flex-1">
-              <p className="font-semibold">{track.name}</p>
-              <p className="text-sm text-gray-600">
-                {track.artists.map((artist) => artist.name).join(', ')}
-              </p>
-              <p className="text-xs text-gray-500">
-                Popularity: {track.popularity}/100
-              </p>
-            </div>
+return (
+  <Section title="Recommended B-Sides">
+    {/* Track List with Checkboxes */}
+    <div className="space-y-3">
+      {recommendations.map((track, index) => (
+        <div
+          key={track.id}
+          className="flex items-center gap-4 rounded-lg bg-gray-100 p-3 transition hover:bg-gray-200"
+        >
+          <input
+            type="checkbox"
+            checked={selectedSeeds.some(t => t.id === track.id)}
+            onChange={() => toggleSeedSelection(track)}
+            disabled={selectedSeeds.length >= 3 && !selectedSeeds.some(t => t.id === track.id)}
+            className="h-5 w-5 cursor-pointer"
+          />
+          <span className="text-lg font-bold text-gray-400">
+            {index + 1}
+          </span>
+          {track.album.images[0] && (
+            <img
+              src={track.album.images[0].url}
+              alt={track.album.name}
+              className="h-16 w-16 rounded object-cover"
+            />
+          )}
+          <div className="flex-1">
+            <p className="font-semibold">{track.name}</p>
+            <p className="text-sm text-gray-600">
+              {track.artists.map((artist) => artist.name).join(', ')}
+            </p>
+            <p className="text-xs text-gray-500">
+              Popularity: {track.popularity}/100
+            </p>
           </div>
-        ))}
+        </div>
+      ))}
+    </div>
+
+    {/* Seed Selection Controls */}
+    {selectedSeeds.length > 0 && (
+      <div className="space-y-4 mt-4">
+        {/* Popularity Slider */}
+        <div className="bg-white p-4 rounded-lg shadow">
+          <label htmlFor="popularity-slider" className="block text-sm font-medium text-gray-700 mb-2">
+            Obscurity Level
+          </label>
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-gray-500">Hidden Gems</span>
+            <input
+              id="popularity-slider"
+              type="range"
+              min="10"
+              max="100"
+              value={maxPopularity}
+              onChange={(e) => setMaxPopularity(Number(e.target.value))}
+              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+            />
+            <span className="text-xs text-gray-500">Popular</span>
+          </div>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            Max popularity: <strong>{maxPopularity}</strong>
+          </p>
+        </div>
+
+        {/* Find Similar Button */}
+        <button
+          onClick={handleFindSimilar}
+          disabled={isSearchingSeeded}
+          className="w-full rounded-lg bg-blue-500 px-6 py-3 font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
+        >
+          {isSearchingSeeded 
+            ? 'Finding Similar...' 
+            : `Find Similar Tracks (${selectedSeeds.length} seeds)`
+          }
+        </button>
       </div>
-      <div className="mt-6">
-        {!playlistUrl ? (
-          <button
-            onClick={handleSavePlaylist}
-            disabled={saving || recommendations.length === 0}
-            className="w-full rounded-lg bg-green-500 px-6 py-3 font-semibold text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? 'Saving...' : 'Save as Spotify Playlist'}
-          </button>
-        ) : (
-          <a
-            href={playlistUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full rounded-lg bg-green-600 px-6 py-3 text-center font-semibold text-white hover:bg-green-700"
-          >
-            View Playlist on Spotify →
-          </a>
-        )}
-      </div>
-      
-    </Section>
-  )
+    )}
+
+    {/* Save Playlist Section */}
+    <div className="mt-6">
+      {!playlistUrl ? (
+        <button
+          onClick={handleSavePlaylist}
+          disabled={saving || recommendations.length === 0}
+          className="w-full rounded-lg bg-green-500 px-6 py-3 font-semibold text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? 'Saving...' : 'Save as Spotify Playlist'}
+        </button>
+      ) : (
+        <a
+          href={playlistUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full rounded-lg bg-green-600 px-6 py-3 text-center font-semibold text-white hover:bg-green-700"
+        >
+          View Playlist on Spotify →
+        </a>
+      )}
+    </div>
+  </Section>
+)
 }

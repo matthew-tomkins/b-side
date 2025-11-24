@@ -15,6 +15,7 @@ export interface SpotifyTrack {
     images: Array<{ url: string }>
   }
   popularity: number
+  uri?: string
 }
 
 export interface SpotifyArtist {
@@ -34,4 +35,11 @@ export interface AudioFeatures {
   acousticness: number
   instrumentalness: number
   speechiness: number
+}
+
+export interface SpotifyAudioFeatures {
+  tempo: number
+  energy: number
+  danceability: number
+  valence: number
 }
