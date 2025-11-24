@@ -9,7 +9,8 @@ export default function Login() {
       'user-read-recently-played',
       'user-library-read',
       'playlist-modify-public',
-      'playlist-modify-private'
+      'playlist-modify-private',
+      'user-read-playback-state'
     ].join(' ')
 
     const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`

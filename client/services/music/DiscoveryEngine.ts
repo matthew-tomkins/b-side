@@ -1,4 +1,4 @@
-import { MusicPlatform, Track, TasteProfile, SearchParams } from "./types"
+import { MusicPlatform, Track, TasteProfile } from "./types"
 
 export class DiscoveryEngine {
   constructor(private platform: MusicPlatform) {}
@@ -28,128 +28,80 @@ export class DiscoveryEngine {
       genres
     }
 }
+  // Find B-Sides based on user taste
+  async findBSides(params: {
+    genre?: string
+    seedTracks?: Track[]
+    limit?: number
+  }): Promise<Track[]> {
+    // Strategy 1: Get user's library for filtering
+    const library = await this.platform.getUserLibrary()
+    const libraryTrackIds = new Set(library.map(t => t.id))
+    
+    console.log('Library tracks:', library.length)
 
-// // Find B-Sides based on user taste
-// async findBSides(params: {
-//   genre?: string
-//   seedTracks?: Track[]
-//   limit?: number
-// }): Promise<Track[]> {
-//   const searchParams: SearchParams = {
-//     genre: params.genre || 'electronic',
-//     popularity: { max: 40 }, // B-Sides only
-//     limit: params.limit || 50
-//   }
+    // Strategy 2: If seeds provided, get recommendations from Spotify
+    if (params.seedTracks && params.seedTracks.length > 0) {
+      console.log('Getting NEW recommendations based on', params.seedTracks.length, 'seeds')
+      
+      // Extract seed track IDs and artist IDs
+      const seedTrackIds = params.seedTracks.map(t => t.id)
+      const seedArtistIds = Array.from(new Set(
+        params.seedTracks.flatMap(track => track.artists.map(a => a.id))
+      ))
+      
+      console.log('Seed tracks:', seedTrackIds)
+      console.log('Seed artists:', seedArtistIds)
 
-//   // Search for tracks
-//   const tracks = await this.platform.searchTracks(searchParams)
+      // Get recommendations from Spotify
+      const recommendations = await this.platform.getRecommendations({
+        seedTracks: seedTrackIds.slice(0, 3), // Use up to 3 track seeds
+        seedArtists: seedArtistIds.slice(0, 2), // Use up to 2 artist seeds
+        limit: 50 // Get more to filter from
+      })
+      
+      console.log('Spotify returned', recommendations.length, 'recommendations')
+      
+      // Filter out tracks already in library
+      const newTracks = recommendations.filter(track => !libraryTrackIds.has(track.id))
+      
+      console.log('After removing library tracks:', newTracks.length, 'NEW tracks')
+      
+      // Filter for B-Sides (popularity < 40) and sort
+      const bSides = newTracks
+        .filter(track => track.popularity < 40)
+        .sort((a, b) => a.popularity - b.popularity)
+      
+      console.log('B-Sides found (popularity < 40):', bSides.length)
+      
+      // If not enough B-Sides, include some mid-popularity tracks
+      if (bSides.length < (params.limit || 10)) {
+        const moreTracks = newTracks
+          .filter(track => track.popularity >= 40 && track.popularity < 60)
+          .sort((a, b) => a.popularity - b.popularity)
+          .slice(0, (params.limit || 10) - bSides.length)
+        
+        console.log('Adding', moreTracks.length, 'mid-popularity tracks to fill results')
+        
+        return [...bSides, ...moreTracks].slice(0, params.limit || 10)
+      }
 
-//   console.log('Search returned tracks:', tracks.length)
-//   console.log('Sample tracks:', tracks.slice(0, 3).map(t => ({ name: t.name, popularity: t.popularity })))
+      return bSides.slice(0, params.limit || 10)
+    }
 
-//   //Filter by popularity
-//   const bSides = tracks.filter(track => track.popularity <= 40)
-
-//   console.log('After filtering, B-Sides found:', bSides.length)
-
-//   // If seed tracks provided, filter by similarity
-//   if (params.seedTracks && params.seedTracks.length > 0) {
-//     // Get audio features for seed tracks
-//     const seedFeatures = await Promise.all(
-//       params.seedTracks.map(track => this.platform.getAudioFeatures(track.id))
-//     )
-
-//     // Calculate average seed features
-//     const avgSeedBPM = seedFeatures.reduce((sum, f) => sum + f.bpm, 0) / seedFeatures.length
-//     const avgSeedEnergy = seedFeatures.reduce((sum, f) => sum + f.energy, 0) / seedFeatures.length
-
-//     // Get features for candidate tracks
-//     const candidateFeatures = await Promise.all(
-//       bSides.slice(0, 20).map(track => this.platform.getAudioFeatures(track.id))
-//     )
-
-//     // Score tracks by similarity to seeds
-//     const scoredTracks = bSides.slice(0, 20).map((track, index) => {
-//       const features = candidateFeatures[index]
-//       const bpmDiff = Math.abs(features.bpm - avgSeedBPM)
-//       const energyDiff = Math.abs(features.energy - avgSeedEnergy)
-
-//       // Lower score = better match
-//       const score = bpmDiff + (energyDiff * 100)
-
-//       return { track, score }
-//     })
-
-//     // Sort by score and return top matches
-//     return scoredTracks
-//       .sort((a, b) => a.score - b.score)
-//       .slice(0, params.limit || 10)
-//       .map(item => item.track)
-//   }
-
-//   // No seeds, just return lowest popularity first
-//   return bSides
-//     .sort((a, b) => a.popularity - b.popularity)
-//     .slice(0, params.limit || 10)
-// }
-
-//   // Find tracks similar to seed tracks (user-seeded search)
-//   async findSimilar(seedTracks: Track[], limit = 10): Promise<Track[]> {
-//     return this.findBSides({ seedTracks, limit})
-//   }
-// }
-
-// Find B-Sides based on user taste
-async findBSides(params: {
-  genre?: string
-  seedTracks?: Track[]
-  limit?: number
-}): Promise<Track[]> {
-  // Strategy 1: Get user's library and filter for B-Sides
-  const library = await this.platform.getUserLibrary()
-  
-  console.log('Library tracks:', library.length)
-  
-  // Filter for B-Sides from library
-  const libraryBSides = library.filter(track => track.popularity < 40)
-  
-  console.log('Library B-Sides found:', libraryBSides.length)
-
-  // If we have enough from library, use those
-  if (libraryBSides.length >= (params.limit || 10)) {
-    return libraryBSides
+    // No seeds - return B-Sides from library
+    const libraryBSides = library
+      .filter(track => track.popularity < 40)
       .sort((a, b) => a.popularity - b.popularity)
       .slice(0, params.limit || 10)
+    
+    console.log('No seeds provided, returning', libraryBSides.length, 'library B-Sides')
+    
+    return libraryBSides
   }
 
-  // Strategy 2: Search by very niche genres if we need more
-  const searchParams: SearchParams = {
-    genre: params.genre || 'experimental electronic',
-    limit: 50
+  // Find tracks similar to seed tracks (user-seeded search)
+  async findSimilar(seedTracks: Track[], limit: number = 10): Promise<Track[]> {
+    return this.findBSides({ seedTracks, limit })
   }
-
-  const searchResults = await this.platform.searchTracks(searchParams)
-  
-  console.log('Search results:', searchResults.length)
-  console.log('Sample search results:', searchResults.slice(0, 3).map(t => ({ name: t.name, popularity: t.popularity })))
-  
-  const searchBSides = searchResults.filter(track => track.popularity < 40)
-  
-  console.log('Search B-Sides found:', searchBSides.length)
-
-  // Combine library and search results
-  const allBSides = [...libraryBSides, ...searchBSides]
-  
-  // Deduplicate
-  const uniqueBSides = new Map<string, Track>()
-  allBSides.forEach(track => {
-    if (!uniqueBSides.has(track.id)) {
-      uniqueBSides.set(track.id, track)
-    }
-  })
-
-  return Array.from(uniqueBSides.values())
-    .sort((a, b) => a.popularity - b.popularity)
-    .slice(0, params.limit || 10)
 }
-  }

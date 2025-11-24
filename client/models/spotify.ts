@@ -36,3 +36,10 @@ export interface AudioFeatures {
   instrumentalness: number
   speechiness: number
 }
+
+export interface SpotifyAudioFeatures {
+  tempo: number
+  energy: number
+  danceability: number
+  valence: number
+}

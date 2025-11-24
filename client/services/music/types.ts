@@ -30,6 +30,7 @@ export interface SearchParams {
 export interface MusicPlatform {
   searchTracks(params: SearchParams): Promise<Track[]>
   getAudioFeatures(trackId: string): Promise<AudioFeatures>
+  getBatchAudioFeatures(trackIds: string[]): Promise<AudioFeatures[]>
   getUserLibrary(): Promise<Track[]>
   getTopTracks(): Promise<Track[]>  
 }
