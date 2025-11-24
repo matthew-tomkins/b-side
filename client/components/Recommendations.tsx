@@ -13,6 +13,7 @@ export default function Recommendations() {
   const [saving, setSaving] = useState(false)
   const [playlistUrl, setPlaylistUrl] = useState<string | null>(null)
   const [selectedSeeds, setSelectedSeeds] = useState<Track[]>([])
+  const [maxPopularity, setMaxPopularity] = useState(40)
   const [isSearchingSeeded, setIsSearchingSeeded] = useState(false)
 
   async function handleSavePlaylist() {
@@ -69,7 +70,8 @@ export default function Recommendations() {
       const spotify = new SpotifyAdapter()
       const engine = new DiscoveryEngine(spotify)
 
-      const similar = await engine.findSimilar(selectedSeeds, 10)
+      console.log('Searching with max popularity:', maxPopularity) // Debug log
+      const similar = await engine.findSimilar(selectedSeeds, 20, maxPopularity) // Add maxPopularity!
 
       setRecommendations(similar)
       setSelectedSeeds([]) // Clear selection
@@ -131,78 +133,106 @@ export default function Recommendations() {
     )
   }
 
-  return (
-    <Section title="Recommended B-Sides">
-      <div className="space-y-3">
-        {recommendations.map((track, index) => (
-          <div
-            key={track.id}
-            className="flex items-center gap-4 rounded-lg bg-gray-100 p-3 transition hover:bg-gray-200"
-          >
-            <input
-              type="checkbox"
-              checked={selectedSeeds.some(t => t.id === track.id)}
-              onChange={() => toggleSeedSelection(track)}
-              disabled={selectedSeeds.length >= 3 && !selectedSeeds.some(t => t.id === track.id)}
-              className="h-5 w-5 cursor-pointer"
+return (
+  <Section title="Recommended B-Sides">
+    {/* Track List with Checkboxes */}
+    <div className="space-y-3">
+      {recommendations.map((track, index) => (
+        <div
+          key={track.id}
+          className="flex items-center gap-4 rounded-lg bg-gray-100 p-3 transition hover:bg-gray-200"
+        >
+          <input
+            type="checkbox"
+            checked={selectedSeeds.some(t => t.id === track.id)}
+            onChange={() => toggleSeedSelection(track)}
+            disabled={selectedSeeds.length >= 3 && !selectedSeeds.some(t => t.id === track.id)}
+            className="h-5 w-5 cursor-pointer"
+          />
+          <span className="text-lg font-bold text-gray-400">
+            {index + 1}
+          </span>
+          {track.album.images[0] && (
+            <img
+              src={track.album.images[0].url}
+              alt={track.album.name}
+              className="h-16 w-16 rounded object-cover"
             />
-            <span className="text-lg font-bold text-gray-400">
-              {index + 1}
-            </span>
-            {track.album.images[0] && (
-              <img
-                src={track.album.images[0].url}
-                alt={track.album.name}
-                className="h-16 w-16 rounded object-cover"
-              />
-            )}
-            <div className="flex-1">
-              <p className="font-semibold">{track.name}</p>
-              <p className="text-sm text-gray-600">
-                {track.artists.map((artist) => artist.name).join(', ')}
-              </p>
-              <p className="text-xs text-gray-500">
-                Popularity: {track.popularity}/100
-              </p>
-            </div>
+          )}
+          <div className="flex-1">
+            <p className="font-semibold">{track.name}</p>
+            <p className="text-sm text-gray-600">
+              {track.artists.map((artist) => artist.name).join(', ')}
+            </p>
+            <p className="text-xs text-gray-500">
+              Popularity: {track.popularity}/100
+            </p>
           </div>
-        ))}
-      </div>
-      {selectedSeeds.length > 0 && (
-        <div className="mb-4">
-          <button
-            onClick={handleFindSimilar}
-            disabled={isSearchingSeeded}
-            className="w-full rounded-lg bg-blue-500 px-6 py-3 font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
-          >
-            {isSearchingSeeded 
-              ? 'Finding Similar...' 
-              : `Find Similar Tracks (${selectedSeeds.length} seeds)`
-            }
-          </button>
         </div>
-      )}
-      <div className="mt-6">
-        {!playlistUrl ? (
-          <button
-            onClick={handleSavePlaylist}
-            disabled={saving || recommendations.length === 0}
-            className="w-full rounded-lg bg-green-500 px-6 py-3 font-semibold text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? 'Saving...' : 'Save as Spotify Playlist'}
-          </button>
-        ) : (
-          <a
-            href={playlistUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full rounded-lg bg-green-600 px-6 py-3 text-center font-semibold text-white hover:bg-green-700"
-          >
-            View Playlist on Spotify →
-          </a>
-        )}
+      ))}
+    </div>
+
+    {/* Seed Selection Controls */}
+    {selectedSeeds.length > 0 && (
+      <div className="space-y-4 mt-4">
+        {/* Popularity Slider */}
+        <div className="bg-white p-4 rounded-lg shadow">
+          <label htmlFor="popularity-slider" className="block text-sm font-medium text-gray-700 mb-2">
+            Obscurity Level
+          </label>
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-gray-500">Hidden Gems</span>
+            <input
+              id="popularity-slider"
+              type="range"
+              min="10"
+              max="100"
+              value={maxPopularity}
+              onChange={(e) => setMaxPopularity(Number(e.target.value))}
+              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+            />
+            <span className="text-xs text-gray-500">Popular</span>
+          </div>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            Max popularity: <strong>{maxPopularity}</strong>
+          </p>
+        </div>
+
+        {/* Find Similar Button */}
+        <button
+          onClick={handleFindSimilar}
+          disabled={isSearchingSeeded}
+          className="w-full rounded-lg bg-blue-500 px-6 py-3 font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
+        >
+          {isSearchingSeeded 
+            ? 'Finding Similar...' 
+            : `Find Similar Tracks (${selectedSeeds.length} seeds)`
+          }
+        </button>
       </div>
-      
-    </Section>
-  )
+    )}
+
+    {/* Save Playlist Section */}
+    <div className="mt-6">
+      {!playlistUrl ? (
+        <button
+          onClick={handleSavePlaylist}
+          disabled={saving || recommendations.length === 0}
+          className="w-full rounded-lg bg-green-500 px-6 py-3 font-semibold text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? 'Saving...' : 'Save as Spotify Playlist'}
+        </button>
+      ) : (
+        <a
+          href={playlistUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full rounded-lg bg-green-600 px-6 py-3 text-center font-semibold text-white hover:bg-green-700"
+        >
+          View Playlist on Spotify →
+        </a>
+      )}
+    </div>
+  </Section>
+)
 }

@@ -20,6 +20,7 @@ export interface AudioFeatures {
 
 export interface SearchParams {
   genre?: string
+  query?: string
   bpm?: { min: number; max: number }
   energy?: { min: number; max: number }
   popularity?: {max: number }
@@ -32,7 +33,12 @@ export interface MusicPlatform {
   getAudioFeatures(trackId: string): Promise<AudioFeatures>
   getBatchAudioFeatures(trackIds: string[]): Promise<AudioFeatures[]>
   getUserLibrary(): Promise<Track[]>
-  getTopTracks(): Promise<Track[]>  
+  getTopTracks(): Promise<Track[]>
+  getRecommendations(params: {
+    seedTracks?: string[]
+    seedArtists?: string[]
+    limit?: number
+  }): Promise<Track[]>  
 }
 
 export interface TasteProfile {

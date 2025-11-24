@@ -7,18 +7,22 @@ const SPOTIFY_API_BASE = 'https://api.spotify.com/v1'
 
 export class SpotifyAdapter implements MusicPlatform {
   async searchTracks(params: SearchParams): Promise<Track[]> {
-    // Build search query
-    let query = ''
-
-    if (params.genre) {
+  // Build search query - prioritise explicit query, then genre, then default
+    let query = params.query || ''
+    
+    if (!query && params.genre) {
       query = `genre:"${params.genre}"`
+    }
+    
+    if (!query) {
+      query = 'genre:electronic' // Default
     }
 
     const response = await request
       .get(`${SPOTIFY_API_BASE}/search`)
       .set(getAuthHeaders())
       .query({
-        q: query || 'genre:electronic', // Default query if none provided
+        q: query,
         type: 'track',
         limit: params.limit || 50
       })

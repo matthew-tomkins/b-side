@@ -1,7 +1,12 @@
-import { MusicPlatform, Track, TasteProfile } from "./types"
+import { MusicPlatform, Track, TasteProfile } from './types'
+import { LastFmAdapter } from './LastFmAdapter'
 
 export class DiscoveryEngine {
-  constructor(private platform: MusicPlatform) {}
+  private lastfm: LastFmAdapter
+
+  constructor(private platform: MusicPlatform) {
+    this.lastfm = new LastFmAdapter()
+  }
 
   // Analyse user's taste from their top tracks
   async analyzeTaste(): Promise<TasteProfile> {
@@ -33,6 +38,7 @@ export class DiscoveryEngine {
     genre?: string
     seedTracks?: Track[]
     limit?: number
+    maxPopularity?: number
   }): Promise<Track[]> {
     // Strategy 1: Get user's library for filtering
     const library = await this.platform.getUserLibrary()
@@ -40,58 +46,105 @@ export class DiscoveryEngine {
     
     console.log('Library tracks:', library.length)
 
-    // Strategy 2: If seeds provided, get recommendations from Spotify
+    // Strategy 2: If seeds provided, use Last.fm to find similar tracks
     if (params.seedTracks && params.seedTracks.length > 0) {
-      console.log('Getting NEW recommendations based on', params.seedTracks.length, 'seeds')
+      console.log('Using Last.fm to find similar tracks based on', params.seedTracks.length, 'seeds')
       
-      // Extract seed track IDs and artist IDs
-      const seedTrackIds = params.seedTracks.map(t => t.id)
-      const seedArtistIds = Array.from(new Set(
-        params.seedTracks.flatMap(track => track.artists.map(a => a.id))
-      ))
+      const allSimilar: Array<{ name: string; artist: string }> = []
       
-      console.log('Seed tracks:', seedTrackIds)
-      console.log('Seed artists:', seedArtistIds)
-
-      // Get recommendations from Spotify
-      const recommendations = await this.platform.getRecommendations({
-        seedTracks: seedTrackIds.slice(0, 3), // Use up to 3 track seeds
-        seedArtists: seedArtistIds.slice(0, 2), // Use up to 2 artist seeds
-        limit: 50 // Get more to filter from
+      // Try track-based similarity first
+      for (const seed of params.seedTracks.slice(0, 3)) {
+        try {
+          const similar = await this.lastfm.getSimilarTracks(
+            seed.name,
+            seed.artists[0].name,
+            10
+          )
+          console.log(`Track "${seed.name}" - ${similar.length} similar tracks found`)
+          allSimilar.push(...similar)
+        } catch (err) {
+          console.log(`Track "${seed.name}" - no results, trying artist fallback`)
+        }
+      }
+      
+      // If no track results, try artist-based discovery
+      if (allSimilar.length === 0) {
+        console.log('No track matches, using artist-based discovery')
+        
+        // Get unique artists from seeds
+        const seedArtists = Array.from(new Set(
+          params.seedTracks.flatMap(t => t.artists.map(a => a.name))
+        ))
+        
+        for (const artistName of seedArtists.slice(0, 3)) {
+          try {
+            // Get similar artists
+            const similarArtists = await this.lastfm.getSimilarArtists(artistName, 5)
+            console.log(`Artist "${artistName}" - ${similarArtists.length} similar artists found`)
+            
+            // Get top tracks from each similar artist
+            for (const artist of similarArtists) {
+              const topTracks = await this.lastfm.getArtistTopTracks(artist.name, 3)
+              allSimilar.push(...topTracks)
+            }
+          } catch (err) {
+            console.log(`Artist "${artistName}" - no results`)
+          }
+        }
+      }
+      
+      console.log('Last.fm returned', allSimilar.length, 'similar tracks total')
+      
+      if (allSimilar.length === 0) {
+        console.log('No Last.fm results, returning library B-Sides')
+        return library
+          .filter(track => track.popularity <= (params.maxPopularity || 40))
+          .sort((a, b) => a.popularity - b.popularity)
+          .slice(0, params.limit || 10)
+      }
+      
+      // Search Spotify for these tracks
+      const spotifyPromises = allSimilar.slice(0, 30).map(async (track) => {
+        try {
+          const response = await this.platform.searchTracks({ 
+            query: `track:"${track.name}" artist:"${track.artist}"`,
+            limit: 1 
+          })
+          
+          return response[0] || null
+        } catch (err) {
+          return null
+        }
       })
       
-      console.log('Spotify returned', recommendations.length, 'recommendations')
+      const spotifyResults = (await Promise.all(spotifyPromises)).filter(t => t !== null) as Track[]
+      
+      console.log('Found', spotifyResults.length, 'tracks on Spotify')
       
       // Filter out tracks already in library
-      const newTracks = recommendations.filter(track => !libraryTrackIds.has(track.id))
+      const newTracks = spotifyResults.filter(track => !libraryTrackIds.has(track.id))
       
       console.log('After removing library tracks:', newTracks.length, 'NEW tracks')
       
-      // Filter for B-Sides (popularity < 40) and sort
+      // Filter by popularity and return
+      const maxPop = params.maxPopularity || 40
       const bSides = newTracks
-        .filter(track => track.popularity < 40)
+        .filter(track => track.popularity <= maxPop)
         .sort((a, b) => a.popularity - b.popularity)
-      
-      console.log('B-Sides found (popularity < 40):', bSides.length)
-      
-      // If not enough B-Sides, include some mid-popularity tracks
-      if (bSides.length < (params.limit || 10)) {
-        const moreTracks = newTracks
-          .filter(track => track.popularity >= 40 && track.popularity < 60)
-          .sort((a, b) => a.popularity - b.popularity)
-          .slice(0, (params.limit || 10) - bSides.length)
-        
-        console.log('Adding', moreTracks.length, 'mid-popularity tracks to fill results')
-        
-        return [...bSides, ...moreTracks].slice(0, params.limit || 10)
-      }
 
-      return bSides.slice(0, params.limit || 10)
+      console.log(`B-Sides found (popularity <= ${maxPop}):`, bSides.length)
+      
+      if (bSides.length > 0) {
+        return bSides.slice(0, params.limit || 10)
+      }
+      
+      // If not enough B-Sides, return what we have
+      return newTracks.slice(0, params.limit || 10)
     }
 
     // No seeds - return B-Sides from library
     const libraryBSides = library
-      .filter(track => track.popularity < 40)
+      .filter(track => track.popularity <= (params.maxPopularity || 40))
       .sort((a, b) => a.popularity - b.popularity)
       .slice(0, params.limit || 10)
     
@@ -101,7 +154,7 @@ export class DiscoveryEngine {
   }
 
   // Find tracks similar to seed tracks (user-seeded search)
-  async findSimilar(seedTracks: Track[], limit: number = 10): Promise<Track[]> {
-    return this.findBSides({ seedTracks, limit })
+  async findSimilar(seedTracks: Track[], limit: number = 10, maxPopularity: number = 40): Promise<Track[]> {
+    return this.findBSides({ seedTracks, limit, maxPopularity })
   }
 }
