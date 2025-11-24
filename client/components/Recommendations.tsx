@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react"
-import { getRecentlyPlayed, getSavedTracks, createPlaylist, addTracksToPlaylist } from "../services/spotify/index"
-import { getCurrentUser } from "../services/spotify/index"
-import { SpotifyTrack } from '../models/spotify'
-import Section from "./Section"
+import { useEffect, useState } from 'react'
+import { getCurrentUser, createPlaylist, addTracksToPlaylist } from '../services/spotify/index'
+import { Track } from '../services/music/types'
+import { SpotifyAdapter } from '../services/music/SpotifyAdapter'
+import { DiscoveryEngine } from '../services/music/DiscoveryEngine'
+import Section from './Section'
 import { LoadingState, ErrorState, EmptyState } from './StateMessages'
 
 export default function Recommendations() {
-  const [recommendations, setRecommendations] = useState<SpotifyTrack[]>([])
+  const [recommendations, setRecommendations] = useState<Track[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -46,30 +47,15 @@ export default function Recommendations() {
   useEffect(() => {
     async function fetchCustomRecommendations() {
       try {
-        // Get user's recently played and saved tracks
-        const [recentlyPlayed, savedTracks] = await Promise.all([
-          getRecentlyPlayed(50),
-          getSavedTracks(50)
-        ])
+        // Initialize platform adapter and discovery engine
+        const spotify = new SpotifyAdapter()
+        const engine = new DiscoveryEngine(spotify)
 
-        // Combine all tracks
-        const recentTracks = recentlyPlayed.items.map((item: { track: SpotifyTrack; played_at: string }) => item.track)
-        const libraryTracks = savedTracks.items.map((item: { track: SpotifyTrack; added_at: string }) => item.track)
-        const allTracks = [...recentTracks, ...libraryTracks]
-
-        // Deduplicate by track ID
-        const uniqueTracks = new Map<string, SpotifyTrack>()
-        allTracks.forEach(track => {
-          if (!uniqueTracks.has(track.id)) {
-            uniqueTracks.set(track.id, track)
-          }
+        // Find B-Sides using the discovery engine
+        const bSides = await engine.findBSides({
+          genre: 'electronic', // You can make this dynamic later
+          limit: 10
         })
-
-        // Filter for "B-Sides" (low popularity tracks)
-        const bSides = Array.from(uniqueTracks.values())
-          .filter(track => track.popularity < 40) // Low popularity = hidden gems
-          .sort((a, b) => a.popularity - b.popularity) // Sort by least popular first
-          .slice(0, 10) // Take top 10
 
         setRecommendations(bSides)
         setLoading(false)

@@ -22,7 +22,7 @@ export default function Login() {
       <div className="text-center">
         <h1 className="mb-8 text-4xl font-bold">B-Side</h1>
         <p className="mb-8 text-gray-600">
-          Find music you don't know you're into
+          Find music you don&apos;t know you&apos;re into
         </p>
         <button 
           onClick={handleLogin}
