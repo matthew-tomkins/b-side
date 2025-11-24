@@ -134,7 +134,7 @@ export default function Recommendations() {
   }
 
 return (
-  <Section title="Recommended B-Sides">
+  <Section title="">
     {/* Track List with Checkboxes */}
     <div className="space-y-3">
       {recommendations.map((track, index) => (

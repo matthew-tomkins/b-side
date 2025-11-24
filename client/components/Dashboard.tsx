@@ -44,9 +44,22 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-8">
+            {/* Your Music Profile */}
             <TopArtists />
             <TopTracks />
-            <Recommendations />
+
+            {/* Discovery Section */}
+            <div className="rounded-lg border-2 border-blue-200 bg-blue-50 p-6">
+              <div className="mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Discover New B-Sides
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Find hidden gems from similar artists you&apos;ve never heard before
+                </p>
+              </div>
+              <Recommendations />
+            </div>
           </div>
         </div>
     </div>
