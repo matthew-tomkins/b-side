@@ -100,4 +100,65 @@ export class LastFmAdapter {
       return []
     }
   }
+
+  // Get top tracks for a tag/genre (for Explorer Mode)
+  async getTracksByTag(tag: string, limit: number = 50): Promise<Array<{ name: string; artist: string }>> {
+    try {
+      const response = await request
+        .get(LASTFM_API_BASE)
+        .query({
+          method: 'tag.getTopTracks',
+          tag: tag,
+          api_key: API_KEY,
+          format: 'json',
+          limit
+        })
+
+      if (!response.body.tracks?.track) {
+        return []
+      }
+
+      const tracks = Array.isArray(response.body.tracks.track)
+        ? response.body.tracks.track
+        : [response.body.tracks.track]
+
+      return tracks.map((track: any) => ({
+        name: track.name,
+        artist: track.artist.name
+      }))
+    } catch (err) {
+      console.error('Last.fm getTracksByTag error:', err)
+      return []
+    }
+  }
+
+  // Get top artists for a tag/genre (for Explorer Mode)
+  async getArtistsByTag(tag: string, limit: number = 30): Promise<Array<{ name: string }>> {
+    try {
+      const response = await request
+        .get(LASTFM_API_BASE)
+        .query({
+          method: 'tag.getTopArtists',
+          tag: tag,
+          api_key: API_KEY,
+          format: 'json',
+          limit
+        })
+
+      if (!response.body.topartists?.artist) {
+        return []
+      }
+
+      const artists = Array.isArray(response.body.topartists.artist)
+        ? response.body.topartists.artist
+        : [response.body.topartists.artist]
+
+      return artists.map((artist: any) => ({
+        name: artist.name
+      }))
+    } catch (err) {
+      console.error('Last.fm getArtistsByTag error:', err)
+      return []
+    }
+  }
 }

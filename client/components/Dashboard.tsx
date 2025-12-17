@@ -5,6 +5,7 @@ import { SpotifyUser } from "../models/spotify"
 import TopArtists from "./TopArtists"
 import TopTracks from "./TopTracks"
 import Recommendations from "./Recommendations"
+import ExplorerMode from "./ExplorerMode"
 
 export default function Dashboard() {
   const [user, setUser] = useState<SpotifyUser | null>(null)
@@ -59,6 +60,19 @@ export default function Dashboard() {
                 </p>
               </div>
               <Recommendations />
+            </div>
+
+            {/* Explorer Mode Section */}
+            <div className="rounded-lg border-2 border-purple-200 bg-purple-50 p-6">
+              <div className="mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  🌍 Explorer Mode
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Discover music by region, genre, and era
+                </p>
+              </div>
+              <ExplorerMode />
             </div>
           </div>
         </div>
