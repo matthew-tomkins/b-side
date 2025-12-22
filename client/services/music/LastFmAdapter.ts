@@ -122,7 +122,7 @@ export class LastFmAdapter {
         ? response.body.tracks.track
         : [response.body.tracks.track]
 
-      return tracks.map((track: any) => ({
+      return tracks.map((track: LastFmTrackResponse) => ({
         name: track.name,
         artist: track.artist.name
       }))
@@ -153,12 +153,39 @@ export class LastFmAdapter {
         ? response.body.topartists.artist
         : [response.body.topartists.artist]
 
-      return artists.map((artist: any) => ({
+      return artists.map((artist: LastFmArtistResponse) => ({
         name: artist.name
       }))
     } catch (err) {
       console.error('Last.fm getArtistsByTag error:', err)
       return []
+    }
+  }
+
+  // Get detailed artist info including tags
+  async getArtistInfo(artistName: string): Promise<{ tags: string[] }> {
+    try {
+      const response = await request
+        .get(LASTFM_API_BASE)
+        .query({
+          method: 'artist.getinfo',
+          artist: artistName,
+          api_key: API_KEY,
+          format: 'json'
+        })
+      
+      if (!response.body?.artist?.tags?.tag) {
+        return { tags: [] }
+      }
+      
+      const tags = Array.isArray(response.body.artist.tags.tag)
+        ? response.body.artist.tags.tag.map((t: { name: string }) => t.name.toLowerCase())
+        : []
+      
+      return { tags }
+    } catch (err) {
+      console.error('Last.fm artist info error:', err)
+      return { tags: [] }
     }
   }
 }

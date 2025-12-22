@@ -28,9 +28,11 @@
     ]
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^4.17.2",
+    "musicbrainz-api": "^0.27.0",
     "superagent": "^10.2.1"
   },
   "devDependencies": {

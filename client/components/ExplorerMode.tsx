@@ -5,19 +5,43 @@ import { SpotifyAdapter } from '../services/music/SpotifyAdapter'
 import { DiscoveryEngine } from '../services/music/DiscoveryEngine'
 import Section from './Section'
 import { LoadingState, ErrorState, EmptyState } from './StateMessages'
+import AdvancedSearch from './AdvancedSearch'
+
+interface AdvancedSearchParams {
+  genre?: string
+  country?: string
+  region?: string
+  era?: string
+  includeSurroundingRegions?: boolean
+  energy?: { min: number; max: number }
+  danceability?: { min: number; max: number }
+  valence?: { min: number; max: number }
+  acousticness?: { min: number; max: number }
+  instrumentalness?: { min: number; max: number }
+  tempo?: { min: number; max: number }
+  minPopularity: number
+  maxPopularity: number
+  includeLibraryTracks: boolean
+  deepCutsOnly: boolean
+}
 
 export default function ExplorerMode() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [minPopularity, setMinPopularity] = useState(40)
-  const [showLibraryTracks, setShowLibraryTracks] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [quickQuery, setQuickQuery] = useState('')
   const [results, setResults] = useState<Track[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [playlistUrl, setPlaylistUrl] = useState<string | null>(null)
+  const [lastSearchQuery, setLastSearchQuery] = useState('')
 
-  async function handleExplore() {
-    if (!searchQuery.trim()) {
+  const spotify = new SpotifyAdapter()
+  const discoveryEngine = new DiscoveryEngine(spotify)
+
+  async function handleQuickSearch(e: React.FormEvent) {
+    e.preventDefault()
+    
+    if (!quickQuery.trim()) {
       setError('Please enter a search term')
       return
     }
@@ -25,23 +49,50 @@ export default function ExplorerMode() {
     setLoading(true)
     setError(null)
     setPlaylistUrl(null)
+    setLastSearchQuery(quickQuery)
 
     try {
-      const spotify = new SpotifyAdapter()
-      const engine = new DiscoveryEngine(spotify)
-
-      // Pass the showLibraryTracks parameter
-      const tracks = await engine.exploreByAttributes({
-        query: searchQuery,
-        minPopularity,
-        includeLibraryTracks: showLibraryTracks, // NEW
+      const tracks = await discoveryEngine.exploreByAttributes({
+        query: quickQuery,
+        minPopularity: 40,
+        includeLibraryTracks: true,
         limit: 20,
       })
-
       setResults(tracks)
     } catch (err) {
-      console.error('Explorer mode error:', err)
+      console.error('Quick search error:', err)
       setError('Failed to explore. Try a different search term.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleAdvancedSearch(params: AdvancedSearchParams) {
+    setLoading(true)
+    setError(null)
+    setPlaylistUrl(null)
+
+    try {
+      // Build query string from advanced params
+      const queryParts: string[] = []
+      if (params.genre) queryParts.push(params.genre)
+      if (params.country) queryParts.push(params.country)
+      if (params.region) queryParts.push(params.region)
+      if (params.era) queryParts.push(params.era)
+
+      const query = queryParts.join(' ') || 'music'
+      setLastSearchQuery(query)
+
+      const results = await discoveryEngine.exploreByAttributes({
+        query,
+        minPopularity: params.deepCutsOnly ? 0 : params.minPopularity,
+        includeLibraryTracks: params.includeLibraryTracks,
+        limit: 20,
+      })
+      setResults(results)
+    } catch (err) {
+      console.error('Advanced search error:', err)
+      setError('Failed to explore. Try different search criteria.')
     } finally {
       setLoading(false)
     }
@@ -54,9 +105,13 @@ export default function ExplorerMode() {
     try {
       const user = await getCurrentUser()
       
+      const playlistName = lastSearchQuery 
+        ? `B-Side Explorer: ${lastSearchQuery}`
+        : 'B-Side Explorer Playlist'
+
       const playlist = await createPlaylist(
         user.id,
-        `B-Side Explorer: ${searchQuery}`,
+        playlistName,
         `Discovered via Explorer Mode`,
         true
       )
@@ -79,147 +134,143 @@ export default function ExplorerMode() {
 
   return (
     <Section title="">
-      {/* Search Input */}
-      <div className="space-y-4">
+      <div className="space-y-6">
+        {/* Header */}
         <div>
-          <label htmlFor="search-input" className="block text-sm font-medium text-gray-700 mb-2">
-            What do you want to explore?
-          </label>
-          <input
-            id="search-input"
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleExplore()}
-            placeholder="e.g., Nigerian funk, Japanese city pop, Ethiopian jazz"
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-purple-500 focus:outline-none"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Try: "West Africa funk", "1970s jazz", "Japanese electronic"
+          <h2 className="mb-2 text-2xl font-bold">Explorer Mode</h2>
+          <p className="text-gray-600">
+            Discover music by region, genre, era, and sound
           </p>
         </div>
 
-        {/* Quality Slider */}
-        <div className="bg-white p-4 rounded-lg shadow">
-          <label htmlFor="quality-slider" className="block text-sm font-medium text-gray-700 mb-2">
-            Quality Threshold
-          </label>
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-gray-500">Hidden</span>
-            <input
-              id="quality-slider"
-              type="range"
-              min="10"
-              max="100"
-              value={minPopularity}
-              onChange={(e) => setMinPopularity(Number(e.target.value))}
-              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-            />
-            <span className="text-xs text-gray-500">Popular</span>
-          </div>
-          <p className="text-xs text-gray-500 mt-2 text-center">
-            Minimum quality: <strong>{minPopularity}</strong>
-          </p>
-        </div>
-
-        {/* Show Library Tracks Toggle */}
-        <div className="flex items-center gap-3 bg-white p-4 rounded-lg shadow">
-          <input
-            id="show-library"
-            type="checkbox"
-            checked={showLibraryTracks}
-            onChange={(e) => setShowLibraryTracks(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-          />
-          <label htmlFor="show-library" className="text-sm text-gray-700 cursor-pointer">
-            Include tracks already in my library
-          </label>
-        </div>
-
-        {/* Explore Button */}
-        <button
-          onClick={handleExplore}
-          disabled={loading || !searchQuery.trim()}
-          className="w-full rounded-lg bg-purple-500 px-6 py-3 font-semibold text-white hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? 'Exploring...' : '🔍 Explore'}
-        </button>
-      </div>
-
-      {/* Error State */}
-      {error && (
-        <div className="mt-4">
-          <ErrorState message={error} />
-        </div>
-      )}
-
-      {/* Results */}
-      {results.length > 0 && (
-        <div className="mt-6 space-y-4">
-          <h3 className="text-lg font-bold text-gray-800">
-            Found {results.length} tracks
-          </h3>
-
-          {/* Track List */}
-          <div className="space-y-3">
-            {results.map((track, index) => (
-              <div
-                key={track.id}
-                className="flex items-center gap-4 rounded-lg bg-gray-100 p-3 transition hover:bg-gray-200"
-              >
-                <span className="text-lg font-bold text-gray-400">
-                  {index + 1}
-                </span>
-                {track.album.images[0] && (
-                  <img
-                    src={track.album.images[0].url}
-                    alt={track.album.name}
-                    className="h-16 w-16 rounded object-cover"
-                  />
-                )}
-                <div className="flex-1">
-                  <p className="font-semibold">{track.name}</p>
-                  <p className="text-sm text-gray-600">
-                    {track.artists.map((artist) => artist.name).join(', ')}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Popularity: {track.popularity}/100
-                  </p>
-                </div>
+        {/* Quick Search */}
+        {!showAdvanced && (
+          <div className="space-y-4">
+            <form onSubmit={handleQuickSearch} className="space-y-4">
+              <div>
+                <label htmlFor="quick-search" className="block text-sm font-medium text-gray-700 mb-2">
+                  What do you want to explore?
+                </label>
+                <input
+                  id="quick-search"
+                  type="text"
+                  value={quickQuery}
+                  onChange={(e) => setQuickQuery(e.target.value)}
+                  placeholder="e.g., japanese indie pop, german hip hop, nigerian funk"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-purple-500 focus:outline-none"
+                  disabled={loading}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Try: "West Africa funk", "1970s jazz", "Japanese electronic"
+                </p>
               </div>
-            ))}
-          </div>
 
-          {/* Save Playlist */}
-          <div className="mt-6">
-            {!playlistUrl ? (
               <button
-                onClick={handleSavePlaylist}
-                disabled={saving}
-                className="w-full rounded-lg bg-green-500 px-6 py-3 font-semibold text-white hover:bg-green-600 disabled:opacity-50"
+                type="submit"
+                disabled={loading || !quickQuery.trim()}
+                className="w-full rounded-lg bg-purple-500 px-6 py-3 font-semibold text-white hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {saving ? 'Saving...' : 'Save as Spotify Playlist'}
+                {loading ? 'Exploring...' : '🔍 Explore'}
               </button>
-            ) : (
-              <a
-                href={playlistUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full rounded-lg bg-green-600 px-6 py-3 text-center font-semibold text-white hover:bg-green-700"
-              >
-                View Playlist on Spotify →
-              </a>
-            )}
-          </div>
-        </div>
-      )}
+            </form>
 
-      {/* Empty State */}
-      {!loading && results.length === 0 && !error && (
-        <div className="mt-6">
-          <EmptyState message="Enter a search term to start exploring!" />
-        </div>
-      )}
+            <button
+              onClick={() => setShowAdvanced(true)}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              Advanced Search →
+            </button>
+          </div>
+        )}
+
+        {/* Advanced Search */}
+        {showAdvanced && (
+          <div className="space-y-4">
+            <button
+              onClick={() => setShowAdvanced(false)}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              ← Quick Search
+            </button>
+
+            <AdvancedSearch onSearch={handleAdvancedSearch} isSearching={loading} />
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && <ErrorState message={error} />}
+
+        {/* Results */}
+        {results.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-gray-800">
+              Found {results.length} tracks
+            </h3>
+
+            {/* Track List */}
+            <div className="space-y-3">
+              {results.map((track, index) => (
+                <div
+                  key={track.id}
+                  className="flex items-center gap-4 rounded-lg bg-gray-100 p-3 transition hover:bg-gray-200"
+                >
+                  <span className="text-lg font-bold text-gray-400">
+                    {index + 1}
+                  </span>
+                  {track.album.images[0] && (
+                    <img
+                      src={track.album.images[0].url}
+                      alt={track.album.name}
+                      className="h-16 w-16 rounded object-cover"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <p className="font-semibold">{track.name}</p>
+                    <p className="text-sm text-gray-600">
+                      {track.artists.map((artist) => artist.name).join(', ')}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Popularity: {track.popularity}/100
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Save Playlist */}
+            <div>
+              {!playlistUrl ? (
+                <button
+                  onClick={handleSavePlaylist}
+                  disabled={saving}
+                  className="w-full rounded-lg bg-green-500 px-6 py-3 font-semibold text-white hover:bg-green-600 disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Save as Spotify Playlist'}
+                </button>
+              ) : (
+               <a 
+                  href={playlistUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full rounded-lg bg-green-600 px-6 py-3 text-center font-semibold text-white hover:bg-green-700"
+                >
+                  View Playlist on Spotify →
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && results.length === 0 && !error && (
+          <EmptyState 
+            message={showAdvanced 
+              ? 'Fill in search criteria and click Search'
+              : 'Enter a search query to start exploring!'
+            }
+          />
+        )}
+      </div>
     </Section>
   )
 }
