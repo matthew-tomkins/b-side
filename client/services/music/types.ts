@@ -6,6 +6,8 @@ export interface Track {
     id: string
     name: string
     images: Array<{ url: string }>
+    release_date?: string      // YYYY-MM-DD or YYYY
+    album_type?: string         // 'album' | 'single' | 'compilation'
   }
   popularity: number
   uri?: string

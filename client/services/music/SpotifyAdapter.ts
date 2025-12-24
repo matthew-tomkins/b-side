@@ -1,5 +1,6 @@
 import request from 'superagent'
 import { getAuthHeaders } from '../spotify/auth'
+import { getAccessToken } from '../spotify/auth'
 import { 
   MusicPlatform, 
   Track, 
@@ -64,7 +65,9 @@ export class SpotifyAdapter implements MusicPlatform {
       album: {
         id: track.album.id,
         name: track.album.name,
-        images: track.album.images
+        images: track.album.images,
+        release_date: track.album.release_date,
+        album_type: track.album.album_type
       },
       popularity: track.popularity,
       uri: track.uri
@@ -97,7 +100,9 @@ export class SpotifyAdapter implements MusicPlatform {
       album: {
         id: item.track.album.id,
         name: item.track.album.name,
-        images: item.track.album.images
+        images: item.track.album.images,
+        release_date: item.track.album.release_date,
+        album_type: item.track.album.album_type
       },
       popularity: item.track.popularity,
       uri: item.track.uri
@@ -174,8 +179,6 @@ export class SpotifyAdapter implements MusicPlatform {
     }))
   }
 
-  // NEW (20-05-2025) METHODS FOR DISCOVERY ENGINE
-
   async searchArtists(params: {
     query: string
     limit?: number
@@ -204,6 +207,53 @@ export class SpotifyAdapter implements MusicPlatform {
     }
   }
 
+  async getArtistAlbums(artistId: string): Promise<Array<{
+  id: string
+  name: string
+  release_date: string
+  album_type: string
+}>> {
+  try {
+    const token = await getAccessToken()
+    
+    const response = await fetch(
+      `https://api.spotify.com/v1/artists/${artistId}/albums?include_groups=album,single&limit=50`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Spotify albums API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data.items || []
+  } catch (error) {
+    console.error('Error fetching artist albums:', error)
+    return []
+  }
+}
+
+  async hasReleasesInEra(artistId: string, era: string): Promise<boolean> {
+    try {
+      const albums = await this.getArtistAlbums(artistId)
+      
+      const [startYear, endYear] = era.split('-').map(y => parseInt(y))
+      
+      return albums.some(album => {
+        const year = parseInt(album.release_date.split('-')[0])
+        return year >= startYear && year <= endYear
+      })
+    } catch (error) {
+      // Spotify API unavailable - return false to fall back to beginDate
+      console.warn(`Could not check releases for artist ${artistId}:`, error)
+      return false
+    }
+  }
+  
   async getArtist(artistId: string): Promise<SpotifyArtist | null> {
     try {
       const response = await request
@@ -223,6 +273,33 @@ export class SpotifyAdapter implements MusicPlatform {
     } catch (error) {
       console.error('Spotify get artist error:', error)
       return null
+    }
+  }
+
+  async getArtistTopTracks(artistId: string, market: string = 'US'): Promise<Track[]> {
+    try {
+      const response = await request
+        .get(`${SPOTIFY_API_BASE}/artists/${artistId}/top-tracks`)
+        .set(getAuthHeaders())
+        .query({ market })
+
+      return response.body.tracks.map((track: SpotifyTrack) => ({
+        id: track.id,
+        name: track.name,
+        artists: track.artists.map((a) => ({ id: a.id, name: a.name })),
+        album: {
+          id: track.album.id,
+          name: track.album.name,
+          images: track.album.images,
+          release_date: track.album.release_date,
+          album_type: track.album.album_type
+        },
+        popularity: track.popularity,
+        uri: track.uri
+      }))
+    } catch (error) {
+      console.error(`Spotify get artist top tracks error for ${artistId}:`, error)
+      return []
     }
   }
 

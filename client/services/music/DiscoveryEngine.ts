@@ -5,6 +5,7 @@ import { ArtistScorer } from './ArtistScorer'
 import { QueryParser } from './QueryParser'
 import { QueryCache } from './QueryCache'
 import { ArtistPoolBuilder } from './discovery/ArtistPoolBuilder'
+import { SpotifyAdapter } from './SpotifyAdapter'
 
 export class DiscoveryEngine {
   private lastfm: LastFmAdapter
@@ -12,13 +13,15 @@ export class DiscoveryEngine {
   private cache: QueryCache
   private musicbrainz: MusicBrainzAdapter
   private scorer: ArtistScorer
+  private spotify: SpotifyAdapter  // ← CHANGED: Added spotify property
 
   constructor(private platform: MusicPlatform) {
     this.lastfm = new LastFmAdapter()
     this.parser = new QueryParser()
     this.cache = new QueryCache()
     this.musicbrainz = new MusicBrainzAdapter()
-    this.scorer = new ArtistScorer()
+    this.spotify = platform as SpotifyAdapter  // ← CHANGED: Cast platform
+    this.scorer = new ArtistScorer(this.spotify)  // ← CHANGED: Pass spotify to scorer
   }
 
   async analyzeTaste(): Promise<TasteProfile> {
@@ -179,12 +182,12 @@ export class DiscoveryEngine {
   }
 
   async findSimilar(
-  seedTracks: Track[],
-  limit: number = 10,
-  maxPopularity: number = 40
-): Promise<Track[]> {
-  return this.findBSides({ seedTracks, limit, maxPopularity })
-}
+    seedTracks: Track[],
+    limit: number = 10,
+    maxPopularity: number = 40
+  ): Promise<Track[]> {
+    return this.findBSides({ seedTracks, limit, maxPopularity })
+  }
 
   // Helper: Infer country from genre tags
   private inferCountryFromGenres(tags: string[]): string | undefined {
@@ -244,7 +247,7 @@ export class DiscoveryEngine {
     const libraryTrackIds = new Set(library.map((t) => t.id))
     console.log('Library tracks:', library.length)
 
-    const allSuggestions: Array<{ name: string; artist: string }> = []
+    const allSuggestions: Array<{ name: string; artist: string; spotifyTrack?: Track }> = []
 
     // Map known regions to countries for multi-country searches
     const regionToCountries: Record<string, string[]> = {
@@ -302,55 +305,36 @@ export class DiscoveryEngine {
         artistPool.sources
       )
 
-      // Convert pool candidates to enriched artists with combined data
+      // ← CHANGED: Updated enrichedArtists to include spotifyId
       const enrichedArtists: Array<{
-        artist: MusicBrainzArtist
-        tags: string[]
-        spotifyData?: {
-          genres: string[]
-          popularity: number
-        }
+        artist: MusicBrainzArtist & { spotifyId?: string }
+        combinedTags: string[]
       }> = artistPool.candidates.map((candidate) => {
-        // Use MusicBrainz as base structure
         const mbData = candidate.sources.musicbrainz || {
-          id: candidate.sources.spotify?.id || candidate.sources.lastfm?.mbid || '',
+          id: '',
           name: candidate.name,
           country: undefined,
-          area: undefined,
           beginDate: undefined,
-          genres: [],
+          tags: [],
         }
-
-        // Collect tags/genres from all sources
-        const tags: string[] = []
-
-        if (candidate.sources.lastfm?.tags) {
-          tags.push(...candidate.sources.lastfm.tags)
-        }
-
-        if (candidate.sources.musicbrainz?.tags) {
-          tags.push(...candidate.sources.musicbrainz.tags.map((t) => t.name))
-        }
-
-        // Spotify genres are most reliable for modern artists
-        if (candidate.sources.spotify?.genres) {
-          tags.push(...candidate.sources.spotify.genres)
-        }
-
-        // Infer country from genre tags if not set
+        
+        // Collect all tags from all sources
+        const mbTags = (mbData.tags || []).map(t => (typeof t === 'string' ? t : t.name))
+        const lfmTags = candidate.sources.lastfm?.tags || []
+        const spotifyGenres = candidate.sources.spotify?.genres || []
+        const tags = [...mbTags, ...lfmTags, ...spotifyGenres]
+        
+        // Infer country from genre tags if missing
         if (!mbData.country && tags.length > 0) {
           mbData.country = this.inferCountryFromGenres(tags)
         }
-
+        
+        // ← CHANGED: Attach Spotify ID if available
+        const spotifyId = candidate.sources.spotify?.id
+        
         return {
-          artist: mbData,
-          tags: [...new Set(tags)],
-          spotifyData: candidate.sources.spotify
-            ? {
-                genres: candidate.sources.spotify.genres,
-                popularity: candidate.sources.spotify.popularity,
-              }
-            : undefined,
+          artist: { ...mbData, spotifyId },
+          combinedTags: tags,
         }
       })
 
@@ -362,18 +346,27 @@ export class DiscoveryEngine {
       )
       console.log('Lamp/Vaundy in enriched artists:')
       lampOrVaundy.forEach((a) => {
-        console.log(`  ${a.artist.name}: tags=[${a.tags.join(', ')}]`)
+        console.log(`  ${a.artist.name}: tags=[${a.combinedTags.join(', ')}]`)
       })
       
       // Show what tags we actually got
       console.log('Sample artist tags:')
-      enrichedArtists.slice(0, 5).forEach(({ artist, tags }) => {
-        console.log(`  ${artist.name}: [${tags.join(', ')}]`)
+      enrichedArtists.slice(0, 5).forEach(({ artist, combinedTags }) => {
+        console.log(`  ${artist.name}: [${combinedTags.join(', ')}]`)
       })
 
-      // Score all artists based on query criteria
-      const scoredArtists = enrichedArtists.map(({ artist, tags }) =>
-        this.scorer.scoreArtist(artist, tags, parsed)
+      // ← CHANGED: Make scoring async with Promise.all
+      const scoredArtists = await Promise.all(
+        enrichedArtists.map(async (enriched) => {
+          const spotifyId = enriched.artist.spotifyId
+          
+          return await this.scorer.scoreArtist(
+            enriched.artist,
+            enriched.combinedTags,
+            parsed,
+            spotifyId
+          )
+        })
       )
 
       // DEBUGGING
@@ -443,21 +436,26 @@ export class DiscoveryEngine {
       // (Many classic artists lack era data in MusicBrainz)
       if (parsed.era) {
         const beforeEraFilter = filteredArtists.length
-        
-        const eraMatches = filteredArtists.filter(artist => 
-          artist.matchReasons.some(reason => reason.includes('Era:'))
+
+        const eraMatches = filteredArtists.filter(artist =>
+          artist.matchReasons.some(reason => reason.startsWith('Era:') && !reason.includes('FAILED'))
         )
-        
-        // Also keep artists with BOTH country AND genre match (likely missing era data)
-        // This filters out artists with only country match (wrong era)
-        const countryGenreMatches = filteredArtists.filter(artist => 
-          !artist.matchReasons.some(reason => reason.includes('Era:')) &&
-          artist.matchReasons.some(reason => reason.includes('Country:')) &&
-          artist.matchReasons.some(reason => reason.includes('Genre:'))
-        )
-        
+
+        // Also keep artists with BOTH country AND genre match IF they have missing era data
+        // EXCLUDE artists that explicitly failed era validation (Era: FAILED)
+        const countryGenreMatches = filteredArtists.filter(artist => {
+          const hasEraMatch = artist.matchReasons.some(reason => reason.startsWith('Era:'))
+          const failedEraValidation = artist.matchReasons.some(reason => reason.includes('Era: FAILED'))
+          const hasCountry = artist.matchReasons.some(reason => reason.includes('Country:'))
+          const hasGenre = artist.matchReasons.some(reason => reason.includes('Genre:'))
+
+          // Only include if: no era data (no Era: reason) OR has country+genre
+          // But EXCLUDE if they explicitly failed era validation
+          return !hasEraMatch && !failedEraValidation && hasCountry && hasGenre
+        })
+
         filteredArtists = [...eraMatches, ...countryGenreMatches]
-        
+
         console.log(`Era filter: ${beforeEraFilter} total → ${eraMatches.length} era + ${countryGenreMatches.length} country+genre = ${filteredArtists.length} artists`)
       }
 
@@ -479,9 +477,72 @@ export class DiscoveryEngine {
       })
 
       // Get top tracks from best-matching artists
-      for (const artist of filteredArtists.slice(0, 15)) {
-        const tracks = await this.lastfm.getArtistTopTracks(artist.name, 5)
-        allSuggestions.push(...tracks)
+      // Strategy: Search Spotify for artist, then get their top tracks (reduces API calls)
+      // Phase 1: Increased from 15 to 30 artists to reduce bottleneck
+      const artistLimit = Math.min(30, filteredArtists.length)
+      console.log(`Fetching tracks from top ${artistLimit} artists`)
+
+      for (const artist of filteredArtists.slice(0, artistLimit)) {
+        try {
+          // Search for artist on Spotify
+          const spotifyArtists = await this.spotify.searchArtists({
+            query: artist.name,
+            limit: 1
+          })
+
+          if (spotifyArtists.length > 0) {
+            const spotifyArtist = spotifyArtists[0]
+            console.log(`  Found ${artist.name} on Spotify (ID: ${spotifyArtist.id})`)
+
+            // Get their top tracks directly (1 API call instead of 5)
+            const topTracks = await this.spotify.getArtistTopTracks(spotifyArtist.id)
+
+            // Filter tracks to only include ones where this artist is the primary artist
+            // This prevents compilation tracks and collaborations from polluting results
+            let primaryTracks = topTracks.filter(track => {
+              // Check if the queried artist is the first (primary) artist on the track
+              const primaryArtistId = track.artists[0]?.id
+              return primaryArtistId === spotifyArtist.id
+            })
+
+            // Phase 1: Filter out compilation albums
+            primaryTracks = primaryTracks.filter(track => {
+              return track.album.album_type !== 'compilation'
+            })
+
+            // Phase 1: Filter by album release date if era is specified
+            if (parsed.era) {
+              const [startYear, endYear] = parsed.era.split('-').map(Number)
+              primaryTracks = primaryTracks.filter(track => {
+                if (!track.album.release_date) return false
+                const albumYear = parseInt(track.album.release_date.substring(0, 4))
+                return albumYear >= startYear && albumYear <= endYear
+              })
+            }
+
+            console.log(`    ${topTracks.length} total tracks, ${primaryTracks.length} after filtering`)
+
+            // Phase 1: Increased from 5 to 10 tracks per artist
+            const trackSuggestions = primaryTracks.slice(0, 10).map(track => ({
+              name: track.name,
+              artist: artist.name,
+              spotifyTrack: track // Store the full track object
+            }))
+
+            allSuggestions.push(...trackSuggestions)
+          } else {
+            // Fallback to Last.fm if artist not found on Spotify
+            console.log(`  ${artist.name} not found on Spotify, using Last.fm fallback`)
+            // Phase 1: Increased from 5 to 10 tracks
+            const tracks = await this.lastfm.getArtistTopTracks(artist.name, 10)
+            allSuggestions.push(...tracks)
+          }
+
+          // Small delay to avoid rate limits
+          await new Promise(resolve => setTimeout(resolve, 50))
+        } catch (error) {
+          console.error(`Error fetching tracks for ${artist.name}:`, error)
+        }
       }
 
       console.log('Got', allSuggestions.length, 'tracks from scored artists')
@@ -517,13 +578,27 @@ export class DiscoveryEngine {
 
     console.log('Total suggestions:', allSuggestions.length)
 
-    // Search Spotify for all suggestions (batched to avoid rate limits)
-    const spotifyResults: Track[] = []
-    const batchSize = 20
-    const allSuggestionsToSearch = allSuggestions.slice(0, 100)
+    // Separate tracks that already have Spotify data from those that need searching
+    const tracksWithSpotify: Track[] = []
+    const tracksNeedingSearch: Array<{ name: string; artist: string }> = []
 
-    for (let i = 0; i < allSuggestionsToSearch.length; i += batchSize) {
-      const batch = allSuggestionsToSearch.slice(i, i + batchSize)
+    for (const suggestion of allSuggestions.slice(0, 100)) {
+      if ('spotifyTrack' in suggestion && suggestion.spotifyTrack) {
+        tracksWithSpotify.push(suggestion.spotifyTrack as Track)
+      } else {
+        tracksNeedingSearch.push(suggestion)
+      }
+    }
+
+    console.log(`Tracks already on Spotify: ${tracksWithSpotify.length}`)
+    console.log(`Tracks needing search: ${tracksNeedingSearch.length}`)
+
+    // Search Spotify only for tracks that need it (batched to avoid rate limits)
+    const spotifyResults: Track[] = [...tracksWithSpotify]
+    const batchSize = 20
+
+    for (let i = 0; i < tracksNeedingSearch.length; i += batchSize) {
+      const batch = tracksNeedingSearch.slice(i, i + batchSize)
 
       const batchPromises = batch.map(async (track) => {
         try {
@@ -533,6 +608,7 @@ export class DiscoveryEngine {
           })
           return results[0] || null
         } catch (err) {
+          console.error(`Search failed for "${track.name}" by ${track.artist}:`, err)
           return null
         }
       })
@@ -540,12 +616,13 @@ export class DiscoveryEngine {
       const batchResults = await Promise.all(batchPromises)
       spotifyResults.push(...(batchResults.filter((t) => t !== null) as Track[]))
 
-      if (i + batchSize < allSuggestionsToSearch.length) {
+      // Rate limiting: Wait between batches
+      if (i + batchSize < tracksNeedingSearch.length) {
         await new Promise((resolve) => setTimeout(resolve, 100))
       }
     }
 
-    console.log('Found on Spotify:', spotifyResults.length, 'tracks')
+    console.log('Total Spotify tracks:', spotifyResults.length)
 
     // Remove duplicates
     const uniqueTracks = spotifyResults.filter(

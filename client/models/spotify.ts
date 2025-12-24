@@ -13,6 +13,8 @@ export interface SpotifyTrack {
     id: string
     name: string
     images: Array<{ url: string }>
+    release_date?: string
+    album_type?: string
   }
   popularity: number
   uri?: string
