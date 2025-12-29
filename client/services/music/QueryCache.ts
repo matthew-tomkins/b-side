@@ -67,6 +67,13 @@ export class QueryCache {
     }
   }
 
+  // Clear entire cache
+  clear(): void {
+    this.cache.clear()
+    this.save()
+    console.log('Cache cleared')
+  }
+
   // Get cache stats
   getStats() {
     return {

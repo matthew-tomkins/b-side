@@ -54,6 +54,33 @@ describe('SpotifyAdapter - Discovery Engine Methods', () => {
     })
   })
 
+  describe('getArtistTopTracks', () => {
+    it('gets top tracks for an artist', async () => {
+      const tracks = await spotify.getArtistTopTracks('artist-ramones')
+
+      expect(tracks).toHaveLength(10)
+      expect(tracks[0].name).toBe('Blitzkrieg Bop')
+      expect(tracks[0].artists[0].name).toBe('Ramones')
+      expect(tracks[0].popularity).toBeGreaterThan(0)
+      expect(tracks[0].uri).toBeTruthy()
+    })
+
+    it('returns empty array on error', async () => {
+      localStorage.clear()
+
+      const tracks = await spotify.getArtistTopTracks('invalid-id')
+
+      expect(tracks).toEqual([])
+    })
+
+    it('uses correct market parameter', async () => {
+      const tracks = await spotify.getArtistTopTracks('artist-ramones', 'NZ')
+
+      expect(tracks).toHaveLength(10)
+      expect(tracks[0].name).toBeTruthy()
+    })
+  })
+
   describe('getExtendedAudioFeatures', () => {
     it('gets audio features for a track', async () => {
       const features = await spotify.getExtendedAudioFeatures('track-123')

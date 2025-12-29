@@ -26,7 +26,7 @@ interface Props {
 export default function AdvancedSearch({ onSearch, isSearching }: Props) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [params, setParams] = useState<AdvancedSearchParams>({
-    minPopularity: 40,
+    minPopularity: 25,
     maxPopularity: 100,
     includeLibraryTracks: true,
     deepCutsOnly: false,

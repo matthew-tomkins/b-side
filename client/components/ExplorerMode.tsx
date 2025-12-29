@@ -54,7 +54,7 @@ export default function ExplorerMode() {
     try {
       const tracks = await discoveryEngine.exploreByAttributes({
         query: quickQuery,
-        minPopularity: 40,
+        minPopularity: 25,
         includeLibraryTracks: true,
         limit: 20,
       })

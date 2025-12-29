@@ -173,15 +173,27 @@ export class LastFmAdapter {
           api_key: API_KEY,
           format: 'json'
         })
-      
+
+      console.log(`[Last.fm] getArtistInfo for "${artistName}":`, {
+        hasArtist: !!response.body?.artist,
+        hasTags: !!response.body?.artist?.tags,
+        hasTagArray: !!response.body?.artist?.tags?.tag,
+        tagType: response.body?.artist?.tags?.tag ?
+          (Array.isArray(response.body.artist.tags.tag) ? 'array' : 'object') : 'none',
+        rawTags: response.body?.artist?.tags?.tag
+      })
+
       if (!response.body?.artist?.tags?.tag) {
+        console.log(`[Last.fm] No tags found for "${artistName}"`)
         return { tags: [] }
       }
-      
+
       const tags = Array.isArray(response.body.artist.tags.tag)
         ? response.body.artist.tags.tag.map((t: { name: string }) => t.name.toLowerCase())
         : []
-      
+
+      console.log(`[Last.fm] Extracted tags for "${artistName}":`, tags)
+
       return { tags }
     } catch (err) {
       console.error('Last.fm artist info error:', err)

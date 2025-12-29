@@ -2,6 +2,9 @@ import * as Path from 'node:path'
 import express from 'express'
 import cors, { CorsOptions } from 'cors'
 import authRoutes from './routes/auth.ts'
+import discogsRoutes from './routes/discogs.ts'
+import queryParserRoutes from './routes/query-parser.ts'
+import musicbrainzRoutes from './routes/musicbrainz.ts'
 
 const server = express()
 
@@ -9,6 +12,9 @@ server.use(express.json())
 server.use(cors())
 
 server.use('/api/auth', authRoutes)
+server.use('/api/discogs', discogsRoutes)
+server.use('/api/query-parser', queryParserRoutes)
+server.use('/api/musicbrainz', musicbrainzRoutes)
 
 if (process.env.NODE_ENV === 'production') {
   server.use(express.static(Path.resolve('public')))

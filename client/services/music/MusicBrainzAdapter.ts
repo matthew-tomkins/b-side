@@ -98,11 +98,51 @@ export class MusicBrainzAdapter {
       return []
     }
   }
-  
+
+  /**
+   * Search for a specific artist by name
+   * Used to enrich artists from other sources with MusicBrainz data
+   *
+   * @param artistName - Exact or close artist name
+   * @returns Artist with country and begin date, or null if not found
+   */
+  async searchArtistByName(artistName: string): Promise<MusicBrainzArtist | null> {
+    try {
+      console.log(`[MusicBrainz] Searching for artist: "${artistName}"`)
+
+      const response = await mbApi.search('artist', {
+        query: `artist:"${artistName}"`,
+        limit: 1
+      })
+
+      if (!response.artists || response.artists.length === 0) {
+        console.log(`[MusicBrainz] No match found for "${artistName}"`)
+        return null
+      }
+
+      const artist = response.artists[0] as MBArtistResult
+      const result: MusicBrainzArtist = {
+        id: artist.id,
+        name: artist.name,
+        country: artist.country,
+        area: artist.area?.name,
+        beginDate: artist['life-span']?.begin,
+        genres: artist.tags?.map(t => t.name) || [],
+        score: artist.score || 0
+      }
+
+      console.log(`[MusicBrainz] Found: "${result.name}" (country: ${result.country}, begin: ${result.beginDate})`)
+      return result
+    } catch (err) {
+      console.error(`[MusicBrainz] Error searching for "${artistName}":`, err)
+      return null
+    }
+  }
+
   /**
    * Extract artist names from MusicBrainz artist objects
    * Utility method for downstream track searching
-   * 
+   *
    * @param artists - Array of MusicBrainz artist objects
    * @returns Array of artist name strings
    */

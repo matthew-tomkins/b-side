@@ -1,5 +1,20 @@
 export interface ArtistCandidate {
   name: string
+  country?: string
+  beginDate?: string
+  area?: string
+  spotifyId?: string
+  tags: string[]
+  sources: {
+    primary: string
+    musicbrainz: boolean
+    spotify: boolean
+  }
+}
+
+// Legacy interface for backwards compatibility
+export interface LegacyArtistCandidate {
+  name: string
   sources: {
     musicbrainz?: MusicBrainzData
     lastfm?: LastFmData
@@ -35,8 +50,8 @@ export interface SpotifyData {
 export interface ArtistPool {
   candidates: ArtistCandidate[]
   sources: {
-    musicbrainz: number
-    lastfm: number
-    spotify: number
+    primary: number
+    enriched: number
+    total: number
   }
 }

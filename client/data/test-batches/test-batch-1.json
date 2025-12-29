@@ -1,0 +1,2042 @@
+{
+  "metadata": {
+    "batchNumber": 1,
+    "startLine": 10000,
+    "endLine": 20000,
+    "processedCount": 299,
+    "artistCount": 159,
+    "errorCount": 0,
+    "durationSeconds": 0.018
+  },
+  "artists": [
+    {
+      "discogsId": "1",
+      "name": "The Persuader",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "680",
+      "name": "Free Energy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "681",
+      "name": "Projekt: PM",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "194",
+      "name": "Various",
+      "genres": [
+        "Electronic",
+        "Jazz"
+      ],
+      "styles": [
+        "Abstract",
+        "Acid",
+        "Acid Jazz",
+        "Ambient",
+        "Breaks",
+        "Broken Beat",
+        "Deep House",
+        "Disco",
+        "Downtempo",
+        "Drum n Bass",
+        "Dub",
+        "Dub Techno",
+        "Electro",
+        "Experimental",
+        "Future Jazz",
+        "Hardcore",
+        "House",
+        "IDM",
+        "Minimal",
+        "Tech House",
+        "Techno",
+        "Trance",
+        "Tribal",
+        "Trip Hop"
+      ],
+      "releaseCount": 36
+    },
+    {
+      "discogsId": "685",
+      "name": "Callisto",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Drum n Bass"
+      ],
+      "releaseCount": 3
+    },
+    {
+      "discogsId": "686",
+      "name": "Abacus",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "148",
+      "name": "Larry Heard",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "687",
+      "name": "Storm Bryant",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "57869",
+      "name": "Bratticus",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "671",
+      "name": "Brommage Dub",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Dub",
+        "Tech House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "689",
+      "name": "Charly Brown",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "147656",
+      "name": "Savere",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "695",
+      "name": "Justin Tewn",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Drum n Bass"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "696",
+      "name": "Glenn Underground",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Disco"
+      ],
+      "releaseCount": 3
+    },
+    {
+      "discogsId": "252",
+      "name": "Iz &amp; Diz",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "697",
+      "name": "Boo Williams",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Tech House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "698",
+      "name": "Chris Brann",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "226",
+      "name": "Fresh &amp; Low",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "702",
+      "name": "Alton Miller",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "703",
+      "name": "Venus Attack Project",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Downtempo"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "704",
+      "name": "Deep Sensation",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "705",
+      "name": "Dubtribe Sound System",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "76",
+      "name": "Kevin Yost",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "158",
+      "name": "Toka Project",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Downtempo"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "706",
+      "name": "Fresh Cool Juice",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "707",
+      "name": "Solaris Heights",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "267340",
+      "name": "Aquanauts (2)",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Disco",
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "708",
+      "name": "Seafoam",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "2717",
+      "name": "Chuck Perkins",
+      "genres": [
+        "Electronic",
+        "Jazz"
+      ],
+      "styles": [
+        "Afro-Cuban Jazz",
+        "Contemporary Jazz"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "710",
+      "name": "Common Nature",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "712",
+      "name": "Mutabaruka",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Tribal House"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "69662",
+      "name": "Kasio",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Funk"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "717",
+      "name": "Nuspirit Helsinki",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Future Jazz"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "3820",
+      "name": "Ursula Rucker",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Downtempo"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "720",
+      "name": "Metamatics",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "IDM"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "331",
+      "name": "Recept",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Minimal",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "721",
+      "name": "Merrick Brown",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Minimal",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "333",
+      "name": "Stewart Walker",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Minimal",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "17581",
+      "name": "Fred Giannelli",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Minimal",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "237797",
+      "name": "Blacklight (3)",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Tech House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "729",
+      "name": "Richard Salter",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "731",
+      "name": "Hawke",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Tech House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "4801",
+      "name": "Scott Findley",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "733",
+      "name": "Morgan Page",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Tech House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "734",
+      "name": "Kage",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "735",
+      "name": "Wyndell Long",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "736",
+      "name": "Luomo",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Microhouse",
+        "Minimal Techno",
+        "Tech House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "737",
+      "name": "Circulation",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House",
+        "Progressive House",
+        "Tech House"
+      ],
+      "releaseCount": 3
+    },
+    {
+      "discogsId": "50",
+      "name": "ADNY",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "5405",
+      "name": "Dune (2)",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Trance"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "742",
+      "name": "Aurora Borealis",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid",
+        "Hard Trance",
+        "Hardcore",
+        "Trance"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "66975",
+      "name": "Juantrip'",
+      "genres": [
+        "Electronic",
+        "Rock"
+      ],
+      "styles": [
+        "Alternative Rock",
+        "Ambient",
+        "Downtempo",
+        "Instrumental",
+        "Leftfield",
+        "Psychedelic",
+        "Psychedelic Rock",
+        "Techno",
+        "Trip Hop"
+      ],
+      "releaseCount": 6
+    },
+    {
+      "discogsId": "162",
+      "name": "Shazz",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Garage House",
+        "House"
+      ],
+      "releaseCount": 3
+    },
+    {
+      "discogsId": "748",
+      "name": "Feedback",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid",
+        "Techno",
+        "Trance"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "744",
+      "name": "Scan X",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Breakbeat",
+        "Electro",
+        "Techno"
+      ],
+      "releaseCount": 4
+    },
+    {
+      "discogsId": "749",
+      "name": "Iberian",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Abstract",
+        "Acid",
+        "Hard Trance",
+        "House",
+        "Tech House",
+        "Techno",
+        "Trance"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "750",
+      "name": "Laurent Garnier",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid",
+        "Ambient",
+        "Downtempo",
+        "Drum n Bass",
+        "Electro",
+        "House",
+        "Techno",
+        "Trance",
+        "Tribal"
+      ],
+      "releaseCount": 16
+    },
+    {
+      "discogsId": "175",
+      "name": "Chris Simmonds",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ],
+      "releaseCount": 3
+    },
+    {
+      "discogsId": "753",
+      "name": "Nuages",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "756",
+      "name": "Taho",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "74",
+      "name": "St Germain",
+      "genres": [
+        "Electronic",
+        "Latin"
+      ],
+      "styles": [
+        "Breaks",
+        "Deep House",
+        "Downtempo",
+        "Future Jazz",
+        "Garage House",
+        "House",
+        "Jungle",
+        "Salsa",
+        "Techno",
+        "UK Garage"
+      ],
+      "releaseCount": 6
+    },
+    {
+      "discogsId": "757",
+      "name": "Smooth &amp; Simmonds",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "758",
+      "name": "Private Funk",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "171",
+      "name": "Tim Deluxe",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "771",
+      "name": "Thug",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "IDM",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "772",
+      "name": "Tim Koch",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Downtempo",
+        "Experimental",
+        "IDM"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "292163",
+      "name": "Zarathoustra",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "774",
+      "name": "Alaska",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "775",
+      "name": "Toni Mono",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "638",
+      "name": "Aqua Bassino",
+      "genres": [
+        "Electronic",
+        "Jazz"
+      ],
+      "styles": [
+        "Ambient",
+        "Deep House",
+        "Downtempo",
+        "Future Jazz",
+        "Techno"
+      ],
+      "releaseCount": 3
+    },
+    {
+      "discogsId": "747",
+      "name": "Nova Nova",
+      "genres": [
+        "Classical",
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Deep Techno",
+        "Downtempo",
+        "Drum n Bass",
+        "House",
+        "Modern",
+        "Techno"
+      ],
+      "releaseCount": 3
+    },
+    {
+      "discogsId": "309638",
+      "name": "Derek Bays",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "643",
+      "name": "A Reminiscent Drive",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Deep House",
+        "Downtempo",
+        "House",
+        "Techno",
+        "Trip Hop"
+      ],
+      "releaseCount": 6
+    },
+    {
+      "discogsId": "782",
+      "name": "Norma Jean Bell",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "739",
+      "name": "Jori Hulkkonen",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House",
+        "Techno"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "780",
+      "name": "Chaotik Ramses",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "787",
+      "name": "Elegia",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Deep House",
+        "Downtempo",
+        "Drum n Bass",
+        "Electro",
+        "House",
+        "Progressive House",
+        "Tech House",
+        "Techno"
+      ],
+      "releaseCount": 5
+    },
+    {
+      "discogsId": "788",
+      "name": "Ready Made",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Downtempo",
+        "Drum n Bass",
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "790",
+      "name": "Llorca",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Downtempo",
+        "House",
+        "Techno"
+      ],
+      "releaseCount": 3
+    },
+    {
+      "discogsId": "791",
+      "name": "Mr. Oizo",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Breakbeat",
+        "Breaks",
+        "Deep House",
+        "Downtempo",
+        "Electro",
+        "Experimental",
+        "House",
+        "Techno"
+      ],
+      "releaseCount": 4
+    },
+    {
+      "discogsId": "792",
+      "name": "Alexkid",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Drum n Bass",
+        "House",
+        "Techno",
+        "Trip Hop"
+      ],
+      "releaseCount": 3
+    },
+    {
+      "discogsId": "793",
+      "name": "Acid Farm",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "738",
+      "name": "Acid Junkies",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid",
+        "Electro",
+        "Hard Trance",
+        "Techno"
+      ],
+      "releaseCount": 3
+    },
+    {
+      "discogsId": "794",
+      "name": "ManMachineMan",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Downtempo",
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "795",
+      "name": "De-Phazz",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Downtempo"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "817",
+      "name": "Terry Francis",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Tech House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "818",
+      "name": "Those Norwegians",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Downtempo",
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "819",
+      "name": "Sweet Exorcist",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid",
+        "Bleep",
+        "IDM",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "831",
+      "name": "Rhythm Invention",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "House",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "833",
+      "name": "RAC",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Electro",
+        "House",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "837",
+      "name": "Frederic Galliano",
+      "genres": [
+        "Electronic",
+        "Jazz"
+      ],
+      "styles": [
+        "Deep House",
+        "Downtempo",
+        "Future Jazz",
+        "Jazz-Funk",
+        "Techno"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "49112",
+      "name": "Louis 2000",
+      "genres": [
+        "Electronic",
+        "Jazz"
+      ],
+      "styles": [
+        "Contemporary Jazz",
+        "Future Jazz"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "842",
+      "name": "Sound Of K",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "39544",
+      "name": "Round One",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Dub",
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "1170",
+      "name": "Round Two",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Dub Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "846",
+      "name": "Tikiman",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Downtempo",
+        "Dub Techno",
+        "House"
+      ],
+      "releaseCount": 3
+    },
+    {
+      "discogsId": "220717",
+      "name": "Round Five",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Dub",
+        "Dub Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "849",
+      "name": "Choice",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid",
+        "Acid House",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "856",
+      "name": "Lunatic Asylum",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Hard Trance",
+        "Techno"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "851",
+      "name": "Orange",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Deep House",
+        "Downtempo"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "854",
+      "name": "Renegade Legion",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Hard Trance",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "840",
+      "name": "Soofle",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Techno",
+        "Trance"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "855",
+      "name": "Suburban Knight",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "857",
+      "name": "Robert Armani",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "859",
+      "name": "Coma Club",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "860",
+      "name": "Mike Dearborn",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "872",
+      "name": "Edge Of Motion",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "884",
+      "name": "Ismistik",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "889",
+      "name": "The Optic Crux",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "IDM",
+        "Minimal Techno",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "865",
+      "name": "Random XS",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid",
+        "Electro",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "347",
+      "name": "Terrace",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "890",
+      "name": "Alcove",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "891",
+      "name": "Joey Beltram",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid",
+        "Ambient",
+        "IDM"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "899",
+      "name": "Karma De La Luna",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Dub"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "893",
+      "name": "Man-Dello",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "150567",
+      "name": "Nemesis (9)",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Downtempo",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "931",
+      "name": "Another Fine Day",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "932",
+      "name": "A Positive Life",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Techno",
+        "Trance"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "751",
+      "name": "LFO",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Electro",
+        "IDM",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "473",
+      "name": "The Black Dog",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "IDM",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "950",
+      "name": "The Sabres Of Paradise",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Abstract",
+        "Ambient",
+        "Breakbeat",
+        "Downtempo",
+        "IDM",
+        "Leftfield",
+        "Progressive House",
+        "Techno"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "949",
+      "name": "Electronic Eye",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Techno"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "952",
+      "name": "Jimi Tenor",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Downtempo",
+        "Future Jazz"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "939",
+      "name": "The Higher Intelligence Agency",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid",
+        "Ambient",
+        "IDM",
+        "Techno"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "959",
+      "name": "Aquarhythms",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Tech House",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "372",
+      "name": "Spacetime Continuum",
+      "genres": [
+        "Electronic",
+        "Jazz"
+      ],
+      "styles": [
+        "Acid House",
+        "Acid Jazz",
+        "Ambient House",
+        "Drum n Bass",
+        "Fusion",
+        "Future House",
+        "Future Jazz",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "3956",
+      "name": "Biosphere",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "941",
+      "name": "Insanity Sect",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Downtempo"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "212409",
+      "name": "Seed (3)",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Downtempo"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "965",
+      "name": "Stillpoint",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Tribal"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "946",
+      "name": "Coldcut",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Breaks",
+        "Downtempo",
+        "Jungle"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "65145",
+      "name": "Max Eastley",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Abstract",
+        "Ambient",
+        "Electroacoustic",
+        "Experimental",
+        "Field Recording",
+        "Minimal Techno",
+        "Tribal"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "967",
+      "name": "Tuu",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Minimal",
+        "Tribal"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "35584",
+      "name": "Various Artists (3)",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Abstract",
+        "Ambient",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "978",
+      "name": "Fluxion",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Dub Techno",
+        "Minimal"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "534",
+      "name": "Monolake",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Dub Techno",
+        "Minimal Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "975",
+      "name": "Porter Ricks",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Dub Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "953",
+      "name": "The Irresistible Force",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Ambient House",
+        "Downtempo"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "972",
+      "name": "Substance",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Abstract",
+        "Ambient",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "973",
+      "name": "Vainqueur",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Ambient",
+        "Dub Techno",
+        "Minimal"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "980",
+      "name": "Vulva",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "IDM",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "983",
+      "name": "DMX Krew",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Broken Beat",
+        "Electro"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "66852",
+      "name": "The Prodigy",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Breakbeat",
+        "Hardcore",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "999",
+      "name": "Empirion",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid",
+        "Hard Trance",
+        "Techno"
+      ],
+      "releaseCount": 2
+    },
+    {
+      "discogsId": "1014",
+      "name": "Timo Maas",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Big Beat",
+        "Progressive Breaks",
+        "Progressive Trance",
+        "Tech Trance",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "1030",
+      "name": "Plastikman",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid",
+        "Ambient",
+        "Experimental",
+        "Minimal",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "1031",
+      "name": "Moby",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Acid House",
+        "Ambient",
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "1032",
+      "name": "Ken Ishii",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Techno"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "800",
+      "name": "Terry Lee Brown Jr.",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Tech House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "1055",
+      "name": "David Chong",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "1064",
+      "name": "Tiko",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "1065",
+      "name": "The Rizmix Crew",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "1066",
+      "name": "The Deep",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 3
+    },
+    {
+      "discogsId": "449018",
+      "name": "Abstract Soul (2)",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Future Jazz"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "1071",
+      "name": "Roland Louis",
+      "genres": [
+        "Electronic",
+        "Funk / Soul"
+      ],
+      "styles": [
+        "Disco"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "682",
+      "name": "DJ Deep",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "1054",
+      "name": "Thirdwave",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "Funk"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "408",
+      "name": "Osymyso",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Downtempo",
+        "IDM",
+        "Trip Hop"
+      ],
+      "releaseCount": 1
+    },
+    {
+      "discogsId": "1746",
+      "name": "Jii Hoo",
+      "genres": [
+        "Electronic"
+      ],
+      "styles": [
+        "Deep House",
+        "House"
+      ],
+      "releaseCount": 1
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useNavigate } from "react-router"
+import { useNavigate, Link } from "react-router"
 import { getCurrentUser } from "../services/spotify/index"
 import { SpotifyUser } from "../models/spotify"
 import TopArtists from "./TopArtists"
@@ -73,6 +73,24 @@ export default function Dashboard() {
                 </p>
               </div>
               <ExplorerMode />
+            </div>
+
+            {/* Engine Comparison Section */}
+            <div className="rounded-lg border-2 border-green-200 bg-green-50 p-6">
+              <div className="mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  🔬 Engine Comparison (Experimental)
+                </h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  Test the new simplified engine vs the current complex engine side-by-side
+                </p>
+                <Link
+                  to="/compare"
+                  className="inline-block px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+                >
+                  Launch Comparison Mode →
+                </Link>
+              </div>
             </div>
           </div>
         </div>

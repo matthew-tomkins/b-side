@@ -87,12 +87,27 @@ Discover hidden gems already in your Spotify library:
 **Backend:**
 - Node.js + Express
 - Spotify Web API (OAuth, user data, search)
-- Last.fm API (music recommendations)
+- Last.fm API (global music recommendations)
+- MusicBrainz local database (320k+ artists with metadata)
+- Adaptive scoring algorithm for quality filtering
 
 **Architecture:**
 - Platform-agnostic adapter pattern
 - Service layer separation
 - Type-safe throughout
+
+**Data Sources:**
+- [Every Noise at Once](https://everynoise.com) - 2,680 curated genre names and taxonomy (MIT License)
+  - Created by Glenn McDonald
+  - Powers genre normalization and cross-source mapping
+- [MusicBrainz](https://musicbrainz.org) - 1.2M+ artist metadata (CC0 License)
+  - Artist geography, tags, and relationships
+  - Community-maintained music encyclopedia
+- [Discogs](https://www.discogs.com) - Genre/style enrichment (Fair Use)
+  - Detailed genre classifications
+  - Artist discographies and release data
+- [Spotify Web API](https://developer.spotify.com) - Music playback and user data
+- [Last.fm API](https://www.last.fm/api) - Music recommendations and discovery
 
 ---
 
@@ -226,10 +241,12 @@ Discover hidden gems already in your Spotify library:
 - [x] Save to Spotify playlists
 
 ### Phase 8: Explorer Mode 🚧 *(In Progress)*
-- [ ] Region/Genre/Era exploration
-- [ ] Free-text search input
-- [ ] Enhanced quality filtering
-- [ ] Contextual results with artist info
+- [x] Region/Genre/Era exploration
+- [x] MusicBrainz local database (320k+ artists)
+- [x] Adaptive scoring algorithm (MBID + era + tags)
+- [x] SimplifiedDiscoveryEngine with rate limiting
+- [ ] Character encoding normalization (The Go-Betweens issue)
+- [ ] Optimize rate limiting (20-artist limit review)
 
 ### Phase 9-10: Intelligence Layer 🔮
 - [ ] "My Blind Spots" analysis

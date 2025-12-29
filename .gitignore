@@ -72,3 +72,16 @@ tags
 
 # Promptkit repository
 promptkit
+
+# Documentation (kept in /PersonalPro directory)
+*.md
+!README.md
+
+# Production troubleshooting logs
+console_output_latest.md
+
+# Large data files (generated from Discogs/MusicBrainz processing)
+client/data/*.json
+client/data/discogs-batches/
+client/data/discogs-batches-backup/
+client/data/musicbrainz-enriched-chunks/

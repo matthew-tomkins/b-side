@@ -10,13 +10,18 @@
     "start": "node dist/server.js",
     "dev": "run-p dev:client dev:server",
     "dev:client": "vite",
-    "dev:server": "tsx watch server/index.ts",
+    "dev:server": "NODE_OPTIONS=--max-old-space-size=4096 tsx watch server/index.ts",
     "build": "run-s build:client build:server",
     "build:client": "vite build",
     "build:server": "esbuild --packages=external --platform=node --format=esm --outfile=dist/server.js --bundle server/index.ts",
     "test": "vitest",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx .",
-    "format": "prettier -w '**/*.{js,jsx,ts,tsx}'"
+    "format": "prettier -w '**/*.{js,jsx,ts,tsx}'",
+    "build:geography": "tsx scripts/build-geography-data.ts",
+    "build:similarity": "tsx scripts/build-similarity-data.ts",
+    "build:music-data": "run-s build:geography build:similarity",
+    "parse:bulk": "tsx scripts/parse-musicbrainz-bulk.ts",
+    "build:bulk-data": "scripts/download-musicbrainz-bulk.sh && npm run parse:bulk"
   },
   "keywords": [
     "frontend"
@@ -33,6 +38,7 @@
     "dotenv": "^17.2.3",
     "express": "^4.17.2",
     "musicbrainz-api": "^0.27.0",
+    "stream-json": "^1.9.1",
     "superagent": "^10.2.1"
   },
   "devDependencies": {
@@ -48,6 +54,7 @@
     "@types/node": "^18.11.9",
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
+    "@types/stream-json": "^1.7.8",
     "@types/superagent": "^8.1.1",
     "@types/supertest": "^6.0.2",
     "@vitejs/plugin-react": "^4.2.1",

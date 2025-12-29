@@ -14,6 +14,34 @@ import { SpotifyTrack, SpotifyAudioFeatures } from '../../models/spotify'
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1'
 
+/**
+ * Calculate similarity between two strings (normalized name matching)
+ * Returns a score from 0 (no match) to 1 (exact match)
+ */
+function calculateNameSimilarity(name1: string, name2: string): number {
+  const normalize = (str: string) =>
+    str.toLowerCase()
+      .replace(/^the\s+/i, '')  // Remove leading "The"
+      .replace(/[^\w\s]/g, '')  // Remove punctuation
+      .trim()
+
+  const n1 = normalize(name1)
+  const n2 = normalize(name2)
+
+  // Exact match after normalization
+  if (n1 === n2) return 1.0
+
+  // One name contains the other (for cases like "X" vs "X-Ray Spex")
+  if (n1.includes(n2) || n2.includes(n1)) {
+    // Prefer shorter matches (e.g., "X" should match "X" not "X-Ray Spex")
+    const lengthRatio = Math.min(n1.length, n2.length) / Math.max(n1.length, n2.length)
+    return lengthRatio > 0.8 ? 0.9 : 0.6
+  }
+
+  // No good match
+  return 0
+}
+
 interface SpotifyArtistResponse {
   id: string
   name: string
@@ -38,6 +66,45 @@ interface SpotifyAudioFeaturesResponse {
   time_signature: number
 }
 export class SpotifyAdapter implements MusicPlatform {
+  /**
+   * Retry a Spotify API call with exponential backoff on rate limit (429) errors
+   * Handles Spotify's rate limiting gracefully
+   */
+  private async retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    maxRetries: number = 3,
+    initialDelay: number = 1000
+  ): Promise<T> {
+    let lastError: Error | unknown
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn()
+      } catch (error: unknown) {
+        lastError = error
+
+        // Check if it's a rate limit error (429)
+        const is429 = (error as { status?: number })?.status === 429 ||
+                      (error as { response?: { status?: number } })?.response?.status === 429 ||
+                      ((error as Error)?.message && (error as Error).message.includes('429'))
+
+        if (!is429 || attempt === maxRetries) {
+          // Not a rate limit error, or we've exhausted retries
+          throw error
+        }
+
+        // Calculate exponential backoff delay
+        const delay = initialDelay * Math.pow(2, attempt)
+        console.warn(`⏳ Spotify rate limit hit (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delay}ms...`)
+
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+
+    throw lastError
+  }
+
   async searchTracks(params: SearchParams): Promise<Track[]> {
     let query = params.query || ''
     
@@ -184,14 +251,17 @@ export class SpotifyAdapter implements MusicPlatform {
     limit?: number
   }): Promise<SpotifyArtist[]> {
     try {
-      const response = await request
-        .get(`${SPOTIFY_API_BASE}/search`)
-        .set(getAuthHeaders())
-        .query({
-          q: params.query,
-          type: 'artist',
-          limit: params.limit || 20
-        })
+      // Wrap in retry logic for rate limiting
+      const response = await this.retryWithBackoff(async () =>
+        request
+          .get(`${SPOTIFY_API_BASE}/search`)
+          .set(getAuthHeaders())
+          .query({
+            q: params.query,
+            type: 'artist',
+            limit: params.limit || 20
+          })
+      )
 
       return response.body.artists.items.map((artist: SpotifyArtistResponse) => ({
         id: artist.id,
@@ -207,6 +277,66 @@ export class SpotifyAdapter implements MusicPlatform {
     }
   }
 
+  /**
+   * Search for a specific artist by name
+   * Used to get Spotify ID for track fetching
+   *
+   * @param artistName - Exact or close artist name
+   * @returns Artist with Spotify ID and genres, or null if not found
+   */
+  async searchArtistByName(artistName: string): Promise<SpotifyArtist | null> {
+    try {
+      // Wrap in retry logic for rate limiting
+      const response = await this.retryWithBackoff(async () =>
+        request
+          .get(`${SPOTIFY_API_BASE}/search`)
+          .set(getAuthHeaders())
+          .query({
+            q: `artist:"${artistName}"`,
+            type: 'artist',
+            limit: 10  // Fetch multiple results to find best match
+          })
+      )
+
+      const artists = response.body.artists.items as SpotifyArtistResponse[]
+      if (artists.length === 0) {
+        return null
+      }
+
+      // Find best matching artist based on name similarity
+      let bestMatch: SpotifyArtistResponse | null = null
+      let bestScore = 0
+
+      for (const artist of artists) {
+        const similarity = calculateNameSimilarity(artistName, artist.name)
+
+        if (similarity > bestScore) {
+          bestScore = similarity
+          bestMatch = artist
+        }
+      }
+
+      // Require at least 0.8 similarity to accept a match
+      if (!bestMatch || bestScore < 0.8) {
+        return null
+      }
+
+      const result: SpotifyArtist = {
+        id: bestMatch.id,
+        name: bestMatch.name,
+        genres: bestMatch.genres || [],
+        popularity: bestMatch.popularity,
+        followers: bestMatch.followers?.total || 0,
+        images: bestMatch.images || []
+      }
+
+      return result
+    } catch (error) {
+      console.error(`[Spotify] Error searching for "${artistName}":`, error)
+      return null
+    }
+  }
+
   async getArtistAlbums(artistId: string): Promise<Array<{
   id: string
   name: string
@@ -214,20 +344,26 @@ export class SpotifyAdapter implements MusicPlatform {
   album_type: string
 }>> {
   try {
-    const token = await getAccessToken()
-    
-    const response = await fetch(
-      `https://api.spotify.com/v1/artists/${artistId}/albums?include_groups=album,single&limit=50`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    )
+    // Wrap in retry logic for rate limiting
+    const response = await this.retryWithBackoff(async () => {
+      const token = await getAccessToken()
+      const res = await fetch(
+        `https://api.spotify.com/v1/artists/${artistId}/albums?include_groups=album,single&limit=50`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
 
-    if (!response.ok) {
-      throw new Error(`Spotify albums API error: ${response.status}`)
-    }
+      if (!res.ok) {
+        const error = new Error(`Spotify albums API error: ${res.status}`) as Error & { status?: number }
+        error.status = res.status
+        throw error
+      }
+
+      return res
+    })
 
     const data = await response.json()
     return data.items || []
@@ -236,6 +372,26 @@ export class SpotifyAdapter implements MusicPlatform {
     return []
   }
 }
+
+  async getAlbumTracks(albumId: string): Promise<Array<{
+    id: string
+    name: string
+    track_number: number
+    duration_ms: number
+    popularity?: number
+  }>> {
+    try {
+      const response = await request
+        .get(`${SPOTIFY_API_BASE}/albums/${albumId}/tracks`)
+        .set(getAuthHeaders())
+        .query({ limit: 50 })
+
+      return response.body.items || []
+    } catch (error) {
+      console.error(`Error fetching album tracks for ${albumId}:`, error)
+      return []
+    }
+  }
 
   async hasReleasesInEra(artistId: string, era: string): Promise<boolean> {
     try {
@@ -299,6 +455,143 @@ export class SpotifyAdapter implements MusicPlatform {
       }))
     } catch (error) {
       console.error(`Spotify get artist top tracks error for ${artistId}:`, error)
+      return []
+    }
+  }
+
+  /**
+   * Get related artists from Spotify
+   * Uses the official /v1/artists/{id}/related-artists endpoint
+   * TOS-compliant: Official Spotify Web API
+   */
+  async getRelatedArtists(artistId: string): Promise<SpotifyArtist[]> {
+    try {
+      const response = await request
+        .get(`${SPOTIFY_API_BASE}/artists/${artistId}/related-artists`)
+        .set(getAuthHeaders())
+
+      return response.body.artists.map((artist: SpotifyArtistResponse) => ({
+        id: artist.id,
+        name: artist.name,
+        genres: artist.genres || [],
+        popularity: artist.popularity || 0
+      }))
+    } catch (error) {
+      console.error(`Spotify get related artists error for ${artistId}:`, error)
+      return []
+    }
+  }
+
+  async getArtistTracksFromEra(artistId: string, era: string, limit: number = 10): Promise<Track[]> {
+    try {
+      // Parse era (e.g., "1970-1979")
+      const [startYear, endYear] = era.split('-').map(Number)
+
+      // Get all albums from the artist
+      const albums = await this.getArtistAlbums(artistId)
+
+      // Filter albums by era
+      const eraAlbums = albums.filter(album => {
+        if (!album.release_date) return false
+        const albumYear = parseInt(album.release_date.substring(0, 4))
+        return albumYear >= startYear && albumYear <= endYear
+      })
+
+      if (eraAlbums.length === 0) {
+        return []
+      }
+
+      // Get tracks from these albums (prioritize albums, then singles)
+      const albumsOnly = eraAlbums.filter(a => a.album_type === 'album')
+      const prioritizedAlbums = albumsOnly.length > 0 ? albumsOnly : eraAlbums
+
+      // OPTIMIZED: Fetch tracks from ALL albums to get the best quality tracks
+      // This increases API calls but ensures we get the most popular tracks from the era
+      const tracksPromises = prioritizedAlbums.map(async album => {
+        try {
+          const response = await request
+            .get(`${SPOTIFY_API_BASE}/albums/${album.id}/tracks`)
+            .set(getAuthHeaders())
+            .query({ limit: 50 })
+
+          return response.body.items.map((track: Record<string, unknown>) => ({
+            id: track.id as string,
+            name: track.name as string,
+            artists: (track.artists as Array<{ id: string; name: string }>).map((a) => ({ id: a.id, name: a.name })),
+            album: {
+              id: album.id,
+              name: album.name,
+              release_date: album.release_date,
+              album_type: album.album_type,
+              images: []
+            },
+            duration_ms: track.duration_ms as number,
+            popularity: 0, // Not available from album tracks endpoint
+            preview_url: track.preview_url as string | undefined,
+            uri: track.uri as string,
+            external_urls: track.external_urls as Record<string, string>
+          }))
+        } catch (error) {
+          console.warn(`Failed to fetch tracks from album ${album.name}:`, error)
+          return []
+        }
+      })
+
+      const allTrackIds = (await Promise.all(tracksPromises)).flat()
+
+      if (allTrackIds.length === 0) {
+        return []
+      }
+
+      // Fetch full track details (including popularity) for ALL track IDs
+      // We need to do this because the album tracks endpoint doesn't include popularity
+      // Spotify allows up to 50 tracks per request, so we'll batch them
+      const allFullTracks: Track[] = []
+
+      for (let i = 0; i < allTrackIds.length; i += 50) {
+        const batch = allTrackIds.slice(i, i + 50)
+        const trackIds = batch.map(t => t.id).join(',')
+
+        try {
+          const response = await this.retryWithBackoff(async () =>
+            request
+              .get(`${SPOTIFY_API_BASE}/tracks`)
+              .set(getAuthHeaders())
+              .query({ ids: trackIds })
+          )
+
+          const batchTracks = response.body.tracks.filter((t: unknown) => t !== null).map((track: Record<string, unknown>) => ({
+            id: track.id as string,
+            name: track.name as string,
+            artists: (track.artists as Array<{ id: string; name: string }>).map((a) => ({ id: a.id, name: a.name })),
+            album: {
+              id: (track.album as Record<string, unknown>).id as string,
+              name: (track.album as Record<string, unknown>).name as string,
+              release_date: (track.album as Record<string, unknown>).release_date as string,
+              album_type: (track.album as Record<string, unknown>).album_type as string,
+              images: (track.album as Record<string, unknown>).images as Array<{ url: string; height: number; width: number }> || []
+            },
+            duration_ms: track.duration_ms as number,
+            popularity: (track.popularity as number) || 0,
+            preview_url: track.preview_url as string | undefined,
+            uri: track.uri as string,
+            external_urls: track.external_urls as Record<string, string>
+          }))
+
+          allFullTracks.push(...batchTracks)
+        } catch (error) {
+          console.warn(`Failed to fetch full track data batch:`, error)
+          // Continue with other batches even if one fails
+        }
+      }
+
+      // Sort by popularity (highest first) and return top N
+      const sortedTracks = allFullTracks.sort((a, b) => b.popularity - a.popularity)
+      const topTracks = sortedTracks.slice(0, limit)
+
+      return topTracks
+    } catch (error) {
+      console.error(`Spotify get artist era tracks error for ${artistId}:`, error)
       return []
     }
   }

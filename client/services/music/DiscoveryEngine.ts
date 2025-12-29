@@ -6,6 +6,8 @@ import { QueryParser } from './QueryParser'
 import { QueryCache } from './QueryCache'
 import { ArtistPoolBuilder } from './discovery/ArtistPoolBuilder'
 import { SpotifyAdapter } from './SpotifyAdapter'
+import { TrackScorer, ScoredTrack } from './scoring/TrackScorer'
+import { DiscogsAdapter } from './DiscogsAdapter'
 
 export class DiscoveryEngine {
   private lastfm: LastFmAdapter
@@ -13,15 +15,29 @@ export class DiscoveryEngine {
   private cache: QueryCache
   private musicbrainz: MusicBrainzAdapter
   private scorer: ArtistScorer
-  private spotify: SpotifyAdapter  // ← CHANGED: Added spotify property
+  private trackScorer: TrackScorer  // Phase 2: Track-level scoring
+  private spotify: SpotifyAdapter
+  private discogs: DiscogsAdapter | null   // Phase 4: Album-level validation (optional)
 
   constructor(private platform: MusicPlatform) {
     this.lastfm = new LastFmAdapter()
     this.parser = new QueryParser()
     this.cache = new QueryCache()
     this.musicbrainz = new MusicBrainzAdapter()
-    this.spotify = platform as SpotifyAdapter  // ← CHANGED: Cast platform
-    this.scorer = new ArtistScorer(this.spotify)  // ← CHANGED: Pass spotify to scorer
+    this.spotify = platform as SpotifyAdapter
+    this.scorer = new ArtistScorer(this.spotify)
+
+    // Only initialize Discogs if token is configured
+    const discogsToken = import.meta.env.VITE_DISCOGS_TOKEN
+    if (discogsToken && discogsToken.trim() !== '') {
+      console.log('[DiscoveryEngine] Discogs integration enabled')
+      this.discogs = new DiscogsAdapter()
+      this.trackScorer = new TrackScorer(this.discogs)
+    } else {
+      console.log('[DiscoveryEngine] Discogs integration disabled (no token)')
+      this.discogs = null
+      this.trackScorer = new TrackScorer()  // No Discogs
+    }
   }
 
   async analyzeTaste(): Promise<TasteProfile> {
@@ -190,38 +206,6 @@ export class DiscoveryEngine {
   }
 
   // Helper: Infer country from genre tags
-  private inferCountryFromGenres(tags: string[]): string | undefined {
-    const lowerTags = tags.map(t => t.toLowerCase())
-    
-    const countryMarkers: Record<string, string> = {
-      'japanese': 'JP',
-      'j-pop': 'JP',
-      'j-rock': 'JP',
-      'city pop': 'JP',
-      'shibuya-kei': 'JP',
-      'k-pop': 'KR',
-      'k-rock': 'KR',
-      'french': 'FR',
-      'french house': 'FR',
-      'chanson': 'FR',
-      'german': 'DE',
-      'krautrock': 'DE',
-      'british': 'GB',
-      'uk': 'GB',
-      'american': 'US',
-    }
-    
-    for (const tag of lowerTags) {
-      for (const [marker, countryCode] of Object.entries(countryMarkers)) {
-        if (tag.includes(marker)) {
-          return countryCode
-        }
-      }
-    }
-    
-    return undefined
-  }
-
   async exploreByAttributes(params: {
     query: string
     minPopularity: number
@@ -293,6 +277,14 @@ export class DiscoveryEngine {
     const hasStructuredData =
       parsed.country || parsed.region || parsed.era || parsed.multiCountryRegion
 
+    // Geographic searches should accept low-popularity tracks (obscure regional music)
+    const isGeographicSearch = !!(parsed.country || parsed.region || parsed.multiCountryRegion)
+    const effectiveMinPopularity = isGeographicSearch ? 0 : params.minPopularity
+
+    if (isGeographicSearch) {
+      console.log('Geographic search detected - accepting all popularity levels')
+    }
+
     if (hasStructuredData) {
       console.log('Using Multi-Source Discovery + Scoring pipeline')
 
@@ -305,40 +297,39 @@ export class DiscoveryEngine {
         artistPool.sources
       )
 
-      // ← CHANGED: Updated enrichedArtists to include spotifyId
+      // Map enriched candidates to scoring format
       const enrichedArtists: Array<{
         artist: MusicBrainzArtist & { spotifyId?: string }
         combinedTags: string[]
       }> = artistPool.candidates.map((candidate) => {
-        const mbData = candidate.sources.musicbrainz || {
-          id: '',
+        // Use enriched data directly (already has everything!)
+        const artist: MusicBrainzArtist & { spotifyId?: string } = {
+          id: candidate.spotifyId || '',
           name: candidate.name,
-          country: undefined,
-          beginDate: undefined,
-          tags: [],
+          country: candidate.country,
+          beginDate: candidate.beginDate,
+          area: candidate.area,
+          genres: candidate.tags,
+          spotifyId: candidate.spotifyId
         }
-        
-        // Collect all tags from all sources
-        const mbTags = (mbData.tags || []).map(t => (typeof t === 'string' ? t : t.name))
-        const lfmTags = candidate.sources.lastfm?.tags || []
-        const spotifyGenres = candidate.sources.spotify?.genres || []
-        const tags = [...mbTags, ...lfmTags, ...spotifyGenres]
-        
-        // Infer country from genre tags if missing
-        if (!mbData.country && tags.length > 0) {
-          mbData.country = this.inferCountryFromGenres(tags)
-        }
-        
-        // ← CHANGED: Attach Spotify ID if available
-        const spotifyId = candidate.sources.spotify?.id
-        
+
         return {
-          artist: { ...mbData, spotifyId },
-          combinedTags: tags,
+          artist,
+          combinedTags: candidate.tags // Already combined during enrichment
         }
       })
 
       console.log(`Prepared ${enrichedArtists.length} artists for scoring`)
+
+      // Show sample
+      console.log('Sample artist data:')
+      enrichedArtists.slice(0, 5).forEach(({ artist, combinedTags }) => {
+        console.log(`  ${artist.name}:`, {
+          country: artist.country || 'NONE',
+          tags: combinedTags.slice(0, 3),
+          spotifyId: artist.spotifyId ? 'YES' : 'NO'
+        })
+      })
 
       // DEBUGGING
       const lampOrVaundy = enrichedArtists.filter((a) => 
@@ -418,8 +409,11 @@ export class DiscoveryEngine {
       })
 
       // Filter artists by threshold (with fallback to lower thresholds)
-      // When era is specified, be more lenient (many artists lack era data)
-      const threshold = parsed.era ? 50 : 60
+      // Geographic searches (country/region): threshold 70 = country (50) + genre (20+)
+      // Era-only searches: threshold 50 (more lenient, many artists lack era data)
+      // Genre-only searches: threshold 70 (strict genre matching)
+      const isGeographicSearch = !!(parsed.country || parsed.region || parsed.multiCountryRegion)
+      const threshold = isGeographicSearch ? 70 : (parsed.era ? 50 : 70)
       let filteredArtists = this.scorer.filterAndSort(scoredArtists, threshold)
 
       if (filteredArtists.length === 0) {
@@ -476,13 +470,13 @@ export class DiscoveryEngine {
         )
       })
 
-      // Get top tracks from best-matching artists
-      // Strategy: Search Spotify for artist, then get their top tracks (reduces API calls)
-      // Phase 1: Increased from 15 to 30 artists to reduce bottleneck
-      const artistLimit = Math.min(30, filteredArtists.length)
-      console.log(`Fetching tracks from top ${artistLimit} artists`)
+      // Phase 2: Get tracks from ALL filtered artists (no limit)
+      // Then score each track individually
+      console.log(`Phase 2: Fetching tracks from ALL ${filteredArtists.length} artists for track-level scoring`)
 
-      for (const artist of filteredArtists.slice(0, artistLimit)) {
+      const allTracks: Array<{ track: Track; artist: typeof filteredArtists[0] }> = []
+
+      for (const artist of filteredArtists) {
         try {
           // Search for artist on Spotify
           const spotifyArtists = await this.spotify.searchArtists({
@@ -494,58 +488,83 @@ export class DiscoveryEngine {
             const spotifyArtist = spotifyArtists[0]
             console.log(`  Found ${artist.name} on Spotify (ID: ${spotifyArtist.id})`)
 
-            // Get their top tracks directly (1 API call instead of 5)
-            const topTracks = await this.spotify.getArtistTopTracks(spotifyArtist.id)
+            let tracksToScore: Track[] = []
 
-            // Filter tracks to only include ones where this artist is the primary artist
-            // This prevents compilation tracks and collaborations from polluting results
-            let primaryTracks = topTracks.filter(track => {
-              // Check if the queried artist is the first (primary) artist on the track
+            // If era specified, get tracks from albums in that era
+            if (parsed.era) {
+              tracksToScore = await this.spotify.getArtistTracksFromEra(
+                spotifyArtist.id,
+                parsed.era,
+                10
+              )
+            } else {
+              // Otherwise use top tracks
+              tracksToScore = await this.spotify.getArtistTopTracks(spotifyArtist.id)
+            }
+
+            // Basic filtering (primary artist only)
+            const primaryTracks = tracksToScore.filter(track => {
               const primaryArtistId = track.artists[0]?.id
               return primaryArtistId === spotifyArtist.id
             })
 
-            // Phase 1: Filter out compilation albums
-            primaryTracks = primaryTracks.filter(track => {
-              return track.album.album_type !== 'compilation'
+            console.log(`    ${tracksToScore.length} total tracks, ${primaryTracks.length} as primary artist`)
+
+            // Store tracks with their artist for scoring
+            primaryTracks.forEach(track => {
+              allTracks.push({ track, artist })
             })
-
-            // Phase 1: Filter by album release date if era is specified
-            if (parsed.era) {
-              const [startYear, endYear] = parsed.era.split('-').map(Number)
-              primaryTracks = primaryTracks.filter(track => {
-                if (!track.album.release_date) return false
-                const albumYear = parseInt(track.album.release_date.substring(0, 4))
-                return albumYear >= startYear && albumYear <= endYear
-              })
-            }
-
-            console.log(`    ${topTracks.length} total tracks, ${primaryTracks.length} after filtering`)
-
-            // Phase 1: Increased from 5 to 10 tracks per artist
-            const trackSuggestions = primaryTracks.slice(0, 10).map(track => ({
-              name: track.name,
-              artist: artist.name,
-              spotifyTrack: track // Store the full track object
-            }))
-
-            allSuggestions.push(...trackSuggestions)
           } else {
-            // Fallback to Last.fm if artist not found on Spotify
-            console.log(`  ${artist.name} not found on Spotify, using Last.fm fallback`)
-            // Phase 1: Increased from 5 to 10 tracks
-            const tracks = await this.lastfm.getArtistTopTracks(artist.name, 10)
-            allSuggestions.push(...tracks)
+            console.log(`  ${artist.name} not found on Spotify, skipping`)
           }
 
-          // Small delay to avoid rate limits
-          await new Promise(resolve => setTimeout(resolve, 50))
+          // Delay to avoid rate limits (200ms = ~5 req/sec, well under Spotify's limit)
+          await new Promise(resolve => setTimeout(resolve, 200))
         } catch (error) {
           console.error(`Error fetching tracks for ${artist.name}:`, error)
         }
       }
 
-      console.log('Got', allSuggestions.length, 'tracks from scored artists')
+      console.log(`Phase 2: Collected ${allTracks.length} tracks from ${filteredArtists.length} artists`)
+
+      // Phase 2: Score each track individually (async for Discogs integration)
+      const scoredTracks: ScoredTrack[] = await Promise.all(
+        allTracks.map(({ track, artist }) =>
+          this.trackScorer.scoreTrack(track, artist, parsed)
+        )
+      )
+
+      console.log('Phase 2: Track scoring distribution:')
+      console.log(this.trackScorer.getScoreDistribution(scoredTracks))
+
+      // Phase 2: Filter by composite score (not artist rank)
+      // Threshold: 40 pts allows good matches (artist 120×0.5 + album 40×0.25 + quality 30×0.15 = max 74.5)
+      const passingTracks = this.trackScorer.filterAndSort(scoredTracks, 40)
+
+      console.log(`Phase 2: ${passingTracks.length} tracks passed threshold (score >= 40)`)
+
+      // Show top 10 tracks overall (even if they don't pass threshold)
+      const allTracksSorted = [...scoredTracks].sort((a, b) => b.totalScore - a.totalScore)
+      console.log('Top 10 scored tracks (all):')
+      allTracksSorted.slice(0, 10).forEach(track => {
+        console.log(`  "${track.name}" by ${track.artistName}: ${track.totalScore} pts`)
+        console.log(`    ${track.scoreBreakdown.join(' | ')}`)
+      })
+
+      console.log('Top 5 passing tracks:')
+      passingTracks.slice(0, 5).forEach(track => {
+        console.log(`  "${track.name}" by ${track.artistName}: ${track.totalScore} pts`)
+        console.log(`    ${track.scoreBreakdown.join(' | ')}`)
+      })
+
+      // Convert back to suggestion format for compatibility
+      allSuggestions.push(...passingTracks.map(track => ({
+        name: track.name,
+        artist: track.artistName,
+        spotifyTrack: track as Track
+      })))
+
+      console.log('Got', allSuggestions.length, 'tracks from track-level scoring')
     }
 
     // Fallback to Last.fm if no structured data or insufficient results
@@ -634,12 +653,12 @@ export class DiscoveryEngine {
     // Filter by library and popularity
     const filtered = uniqueTracks.filter((track) => {
       if (!params.includeLibraryTracks && libraryTrackIds.has(track.id)) return false
-      if (track.popularity < params.minPopularity) return false
+      if (track.popularity < effectiveMinPopularity) return false
       return true
     })
 
     console.log('After filtering:', filtered.length, 'tracks')
-    console.log(`Min popularity: ${params.minPopularity}`)
+    console.log(`Min popularity: ${params.minPopularity} (effective: ${effectiveMinPopularity})`)
     console.log(`Include library tracks: ${params.includeLibraryTracks || false}`)
 
     // Sort by popularity ascending (most obscure first)

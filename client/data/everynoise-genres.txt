@@ -1,0 +1,23 @@
+<html>
+<head>
+<title>our sadness of 404</title>
+</head>
+
+<style>
+body	{margin: 100px; text-align: center; border: 0px; font: 90%/130% Trebuchet MS, Arial, Helvetica, sans-serif;}
+</style>
+
+<body>
+chapters sometimes close abruptly<br>
+and not all of the pages survive<br>
+&nbsp;<br>
+we pause in memory<br>
+and then go again in search of new songs<br>
+&nbsp;<br>
+<a href="https://www.everynoise.com"><b>www.everynoise.com</b></a>
+<!--there is no metal cold enough to separate failure from conscience-->
+<!--the body is divided by hearsay, but united by salience-->
+<!--where nothing is tolerated in darkness, we will malinger brightly-->
+<!--I have been to all of these places in my heart-->
+</body>
+</html>
