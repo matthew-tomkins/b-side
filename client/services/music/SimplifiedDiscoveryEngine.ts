@@ -486,7 +486,7 @@ export class SimplifiedDiscoveryEngine {
       return []
     }
 
-    // Use GenreMapper to aggregate and normalize tags
+    // Use GenreMapper to aggregate and normalise tags
     // Weight: Discogs 2x (more specific), MusicBrainz 1x (broader coverage)
     const aggregated = genreMapper.aggregateTags({
       musicbrainzTags: allMBTags,
