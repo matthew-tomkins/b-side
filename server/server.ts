@@ -4,7 +4,7 @@ import cors, { CorsOptions } from 'cors'
 import authRoutes from './routes/auth.ts'
 import discogsRoutes from './routes/discogs.ts'
 import queryParserRoutes from './routes/query-parser.ts'
-import musicbrainzRoutes from './routes/musicbrainz.ts'
+import musicbrainzRoutes from './routes/musicbrainz/index.ts'
 import configRoutes from './routes/config.ts'
 
 const server = express()
