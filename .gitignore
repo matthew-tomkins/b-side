@@ -81,7 +81,7 @@ promptkit
 console_output_latest.md
 
 # Large data files (generated from Discogs/MusicBrainz processing)
-client/data/*.json
-client/data/discogs-batches/
-client/data/discogs-batches-backup/
-client/data/musicbrainz-enriched-chunks/
+server/data/*.json
+server/data/discogs-batches/
+server/data/discogs-batches-backup/
+server/data/musicbrainz-enriched-chunks/

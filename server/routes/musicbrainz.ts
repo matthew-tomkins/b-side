@@ -31,8 +31,8 @@ let isLoading = true
 // Uses chunked files to avoid V8's string size limit (~536MB)
 async function loadMusicBrainzData() {
   try {
-    const chunksDir = join(process.cwd(), 'client/data/musicbrainz-enriched-chunks')
-    const originalPath = join(process.cwd(), 'client/data/musicbrainz-artists.json')
+    const chunksDir = join(process.cwd(), 'server/data/musicbrainz-enriched-chunks')
+    const originalPath = join(process.cwd(), 'server/data/musicbrainz-artists.json')
 
     // Check if we have chunked enriched data
     if (existsSync(chunksDir)) {

@@ -10,9 +10,11 @@
 import { SpotifyAdapter } from './SpotifyAdapter'
 import { LastFmAdapter } from './LastFmAdapter'
 import { QueryParser, ParsedQuery } from './QueryParser'
-import genreTaxonomy from '../../data/genre-taxonomy.json'
-import artistSimilarity from '../../data/artist-similarity.json'
 import { genreMapper } from './GenreMapper'
+import { normaliseCountry } from '../../utils/countryUtils'
+import { decadeToEra } from '../../utils/dateUtils'
+import { normaliseArtistName, artistNamesMatch } from '../../utils/stringMatching'
+import { deduplicateBy } from '../../utils/arrayUtils'
 
 interface ArtistGeography {
   country: string
@@ -74,11 +76,44 @@ export class SimplifiedDiscoveryEngine {
   private lastfm: LastFmAdapter
   private parser: QueryParser
   private musicbrainzCache: Map<string, ArtistGeography> = new Map()
+  private genreTaxonomy: GenreTaxonomyData | null = null
+  private artistSimilarity: ArtistSimilarityData | null = null
+  private configLoaded: boolean = false
 
   constructor(spotifyAdapter: SpotifyAdapter, lastfmAdapter: LastFmAdapter) {
     this.spotify = spotifyAdapter
     this.lastfm = lastfmAdapter
     this.parser = new QueryParser()
+  }
+
+  /**
+   * Load config data from server API
+   * Call this once before using the engine
+   */
+  async loadConfig(): Promise<void> {
+    if (this.configLoaded) {
+      return
+    }
+
+    try {
+      const [taxonomyRes, similarityRes] = await Promise.all([
+        fetch('/api/config/genre-taxonomy'),
+        fetch('/api/config/artist-similarity')
+      ])
+
+      if (!taxonomyRes.ok || !similarityRes.ok) {
+        throw new Error('Failed to load config data from server')
+      }
+
+      this.genreTaxonomy = await taxonomyRes.json()
+      this.artistSimilarity = await similarityRes.json()
+      this.configLoaded = true
+
+      console.log('[SimplifiedEngine] Config data loaded from server')
+    } catch (error) {
+      console.error('[SimplifiedEngine] Failed to load config:', error)
+      throw error
+    }
   }
 
   /**
@@ -149,7 +184,7 @@ export class SimplifiedDiscoveryEngine {
 
     // Convert decade to era if needed (e.g., "2000s" → "2000-2009")
     if (query.decade && !query.era) {
-      query = { ...query, era: this.decadeToEra(query.decade) }
+      query = { ...query, era: decadeToEra(query.decade) }
     }
 
     const startTime = Date.now()
@@ -239,8 +274,8 @@ export class SimplifiedDiscoveryEngine {
               const lastfmArtists = await this.lastfm.getArtistsByTag(subgenre, 30)
               // Enrich with MusicBrainz to filter by country
               const enriched = await this.enrichArtistsWithMusicBrainz(lastfmArtists.map(a => a.name))
-              const countryCode = query.country ? this.normalizeCountry(query.country) : null
-              const multiCountryCodes = query.multiCountryRegion?.map(c => this.normalizeCountry(c)) || null
+              const countryCode = query.country ? normaliseCountry(query.country) : null
+              const multiCountryCodes = query.multiCountryRegion?.map(c => normaliseCountry(c)) || null
 
               const filtered = lastfmArtists
                 .map(a => a.name)
@@ -301,8 +336,8 @@ export class SimplifiedDiscoveryEngine {
   private async searchMusicBrainzLocal(genre?: string, country?: string, multiCountry?: string[], era?: string): Promise<Array<{ name: string; score: number }>> {
     const artistsWithScores: Array<{ name: string; score: number }> = []
 
-    const countryCode = country ? this.normalizeCountry(country) : null
-    const multiCountryCodes = multiCountry ? multiCountry.map(c => this.normalizeCountry(c)) : null
+    const countryCode = country ? normaliseCountry(country) : null
+    const multiCountryCodes = multiCountry ? multiCountry.map(c => normaliseCountry(c)) : null
 
     // Build search params
     const buildParams = (cc: string) => {
@@ -386,7 +421,11 @@ export class SimplifiedDiscoveryEngine {
    * E.g., "funk" + Africa → ["afrobeat", "afrofunk"]
    */
   private getRegionalSubgenres(genre: string, country?: string, multiCountryRegion?: string[]): string[] {
-    const taxonomy = genreTaxonomy as GenreTaxonomyData
+    if (!this.genreTaxonomy) {
+      return []
+    }
+
+    const taxonomy = this.genreTaxonomy
     const genreInfo = taxonomy.genres[genre]
 
     if (!genreInfo || !genreInfo.subgenres.length) {
@@ -395,8 +434,8 @@ export class SimplifiedDiscoveryEngine {
 
     // Determine target countries
     const targetCountries = country
-      ? [this.normalizeCountry(country)]
-      : multiCountryRegion?.map(c => this.normalizeCountry(c)) || []
+      ? [normaliseCountry(country)]
+      : multiCountryRegion?.map(c => normaliseCountry(c)) || []
 
     if (targetCountries.length === 0) {
       return []
@@ -536,7 +575,11 @@ export class SimplifiedDiscoveryEngine {
    * Handles aliases like "punk rock" → "punk", "hip-hop" → "hip hop"
    */
   private normalizeGenre(genre: string): string {
-    const taxonomy = genreTaxonomy as GenreTaxonomyData
+    if (!this.genreTaxonomy) {
+      return genre
+    }
+
+    const taxonomy = this.genreTaxonomy
     const lowerGenre = genre.toLowerCase()
 
     // Check if it's already a canonical genre
@@ -560,7 +603,11 @@ export class SimplifiedDiscoveryEngine {
    * This increases coverage without making additional API calls
    */
   private expandWithSimilarArtists(artists: string[]): string[] {
-    const similarity = artistSimilarity as ArtistSimilarityData
+    if (!this.artistSimilarity) {
+      return artists
+    }
+
+    const similarity = this.artistSimilarity
     const expanded = new Set<string>(artists)
 
     // For each artist in our initial pool, add their similar artists
@@ -579,179 +626,6 @@ export class SimplifiedDiscoveryEngine {
     return Array.from(expanded)
   }
 
-
-  /**
-   * Convert decade string to era range
-   * E.g., "2000s" → "2000-2009", "1990s" → "1990-1999"
-   */
-  private decadeToEra(decade: string): string {
-    const match = decade.match(/(\d{4})s/)
-    if (match) {
-      const startYear = parseInt(match[1])
-      const endYear = startYear + 9
-      return `${startYear}-${endYear}`
-    }
-
-    // Handle other decade formats like "90s" → "1990-1999"
-    const shortMatch = decade.match(/(\d{2})s/)
-    if (shortMatch) {
-      const twoDigit = parseInt(shortMatch[1])
-      const startYear = twoDigit < 50 ? 2000 + twoDigit : 1900 + twoDigit
-      const endYear = startYear + 9
-      return `${startYear}-${endYear}`
-    }
-
-    return decade // Return as-is if we can't parse it
-  }
-
-  /**
-   * Normalize country names to ISO codes
-   * Maps common country names to their 2-letter codes
-   */
-  private normalizeCountry(country: string): string {
-    const countryMap: Record<string, string> = {
-      'united states': 'US',
-      'usa': 'US',
-      'america': 'US',
-      'us': 'US',
-      'united kingdom': 'GB',
-      'uk': 'GB',
-      'britain': 'GB',
-      'great britain': 'GB',
-      'england': 'GB',
-      'gb': 'GB',
-      'australia': 'AU',
-      'au': 'AU',
-      'new zealand': 'NZ',
-      'nz': 'NZ',
-      'canada': 'CA',
-      'ca': 'CA',
-      'germany': 'DE',
-      'de': 'DE',
-      'france': 'FR',
-      'fr': 'FR',
-      'japan': 'JP',
-      'jp': 'JP',
-      'brazil': 'BR',
-      'br': 'BR',
-      'nigeria': 'NG',
-      'ng': 'NG',
-      'ghana': 'GH',
-      'gh': 'GH',
-      'senegal': 'SN',
-      'sn': 'SN',
-      'south africa': 'ZA',
-      'za': 'ZA',
-      'kenya': 'KE',
-      'ke': 'KE',
-      'mali': 'ML',
-      'ml': 'ML',
-      'ethiopia': 'ET',
-      'et': 'ET',
-      'egypt': 'EG',
-      'eg': 'EG',
-      'tanzania': 'TZ',
-      'tz': 'TZ',
-      'uganda': 'UG',
-      'ug': 'UG',
-      'zimbabwe': 'ZW',
-      'zw': 'ZW',
-      'cameroon': 'CM',
-      'cm': 'CM',
-      'india': 'IN',
-      'in': 'IN',
-      'china': 'CN',
-      'cn': 'CN',
-      'south korea': 'KR',
-      'korea': 'KR',
-      'kr': 'KR',
-      'thailand': 'TH',
-      'th': 'TH',
-      'indonesia': 'ID',
-      'id': 'ID',
-      'philippines': 'PH',
-      'ph': 'PH',
-      'vietnam': 'VN',
-      'vn': 'VN',
-      'malaysia': 'MY',
-      'my': 'MY',
-      'singapore': 'SG',
-      'sg': 'SG',
-      'taiwan': 'TW',
-      'tw': 'TW',
-      'pakistan': 'PK',
-      'pk': 'PK',
-      'mexico': 'MX',
-      'mx': 'MX',
-      'argentina': 'AR',
-      'ar': 'AR',
-      'colombia': 'CO',
-      'co': 'CO',
-      'chile': 'CL',
-      'cl': 'CL',
-      'peru': 'PE',
-      'pe': 'PE',
-      'venezuela': 'VE',
-      've': 'VE',
-      'uruguay': 'UY',
-      'uy': 'UY',
-      'ecuador': 'EC',
-      'ec': 'EC',
-      'bolivia': 'BO',
-      'bo': 'BO',
-      'cuba': 'CU',
-      'cu': 'CU',
-      'dominican republic': 'DO',
-      'do': 'DO',
-      'puerto rico': 'PR',
-      'pr': 'PR',
-      'sweden': 'SE',
-      'se': 'SE',
-      'norway': 'NO',
-      'no': 'NO',
-      'finland': 'FI',
-      'fi': 'FI',
-      'denmark': 'DK',
-      'dk': 'DK',
-      'netherlands': 'NL',
-      'holland': 'NL',
-      'nl': 'NL',
-      'spain': 'ES',
-      'es': 'ES',
-      'italy': 'IT',
-      'it': 'IT',
-      'poland': 'PL',
-      'pl': 'PL',
-      'ireland': 'IE',
-      'ie': 'IE',
-      'belgium': 'BE',
-      'be': 'BE',
-      'switzerland': 'CH',
-      'ch': 'CH',
-      'austria': 'AT',
-      'at': 'AT',
-      'portugal': 'PT',
-      'pt': 'PT',
-      'greece': 'GR',
-      'gr': 'GR',
-      'turkey': 'TR',
-      'tr': 'TR',
-      'israel': 'IL',
-      'il': 'IL',
-      'lebanon': 'LB',
-      'lb': 'LB',
-      'iran': 'IR',
-      'ir': 'IR',
-      'jordan': 'JO',
-      'jo': 'JO',
-      'uae': 'AE',
-      'ae': 'AE',
-      'saudi arabia': 'SA',
-      'sa': 'SA'
-    }
-
-    return countryMap[country.toLowerCase()] || country.toUpperCase()
-  }
 
   /**
    * Phase 2: Get tracks from artists via Spotify
@@ -789,25 +663,6 @@ export class SimplifiedDiscoveryEngine {
   }
 
   /**
-   * Normalize artist name for comparison
-   * Handles Unicode variations (hyphens, dashes, quotes, accents)
-   */
-  private normalizeArtistName(name: string): string {
-    return name
-      .toLowerCase()
-      // Normalize Unicode to decomposed form, then remove accents
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      // Normalize all dash-like characters to regular hyphen
-      .replace(/[\u2010-\u2015\u2212]/g, '-') // en-dash, em-dash, minus, etc. → hyphen
-      // Normalize quotes and apostrophes
-      .replace(/[\u2018\u2019\u201A]/g, "'") // smart single quotes → apostrophe
-      .replace(/[\u201C\u201D\u201E]/g, '"') // smart double quotes → quote
-      // Normalize whitespace
-      .replace(/\s+/g, ' ')
-      .trim()
-  }
-
-  /**
    * Get tracks for a single artist
    */
   private async getArtistTracks(
@@ -832,42 +687,18 @@ export class SimplifiedDiscoveryEngine {
 
       // Validate that the artist name roughly matches what we searched for
       // Spotify's search can return wrong artists (e.g., "The Cure" for "The Clash")
-      // IMPORTANT: Normalize both names to handle Unicode variations (hyphens, accents, etc.)
-      const searchNormalized = this.normalizeArtistName(artistName)
-      const resultNormalized = this.normalizeArtistName(artist.name)
+      // IMPORTANT: Normalise both names to handle Unicode variations (hyphens, accents, etc.)
+      const searchNormalized = normaliseArtistName(artistName)
+      const resultNormalized = normaliseArtistName(artist.name)
 
       console.log(`   📝 Name validation:`)
-      console.log(`      Search normalized: "${searchNormalized}"`)
-      console.log(`      Result normalized: "${resultNormalized}"`)
+      console.log(`      Search normalised: "${searchNormalized}"`)
+      console.log(`      Result normalised: "${resultNormalized}"`)
 
-      // Filter out common words that don't help with matching
-      const stopWords = new Set(['the', 'a', 'an', 'and', 'of', 'to', 'in', 'for', 'on', 'with'])
-      const searchWords = searchNormalized.split(/\s+/).filter(w => !stopWords.has(w) && w.length > 1)
-      const resultWords = resultNormalized.split(/\s+/).filter(w => !stopWords.has(w) && w.length > 1)
-
-      console.log(`      Search words: [${searchWords.join(', ')}]`)
-      console.log(`      Result words: [${resultWords.join(', ')}]`)
-
-      // Smart matching: single-word vs multi-word names
-      let hasMatch: boolean
-
-      if (searchWords.length === 1) {
-        // Single word like "Fela", "Madonna", "Sting"
-        // Allow substring matching (handles variations)
-        hasMatch = resultWords.length > 0 && resultWords.some(rw =>
-          rw.includes(searchWords[0]) || searchWords[0].includes(rw)
-        )
-      } else {
-        // Multi-word like "Joan Adams", "Fela Kuti"
-        // Require ALL words to match (prevents surname-only matches)
-        hasMatch = searchWords.every(sw =>
-          resultWords.some(rw => rw.includes(sw) || sw.includes(rw))
-        ) || searchNormalized === resultNormalized
-      }
-
+      const hasMatch = artistNamesMatch(artistName, artist.name)
       console.log(`      Has match: ${hasMatch}`)
 
-      if (!hasMatch && searchNormalized !== resultNormalized) {
+      if (!hasMatch) {
         console.warn(`   ❌ REJECTED: Name mismatch - "${artistName}" vs "${artist.name}"`)
         return []
       }
@@ -990,18 +821,9 @@ export class SimplifiedDiscoveryEngine {
    * Remove duplicate tracks
    */
   private deduplicateTracks(tracks: SimplifiedTrack[]): SimplifiedTrack[] {
-    const seen = new Set<string>()
-    const unique: SimplifiedTrack[] = []
-
-    for (const track of tracks) {
-      const key = `${track.name.toLowerCase()}|${track.artist.toLowerCase()}`
-      if (!seen.has(key)) {
-        seen.add(key)
-        unique.push(track)
-      }
-    }
-
-    return unique
+    return deduplicateBy(tracks, track =>
+      `${track.name.toLowerCase()}|${track.artist.toLowerCase()}`
+    )
   }
 
   /**

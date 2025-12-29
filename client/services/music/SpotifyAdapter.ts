@@ -1,46 +1,19 @@
 import request from 'superagent'
 import { getAuthHeaders } from '../spotify/auth'
 import { getAccessToken } from '../spotify/auth'
-import { 
-  MusicPlatform, 
-  Track, 
-  AudioFeatures, 
+import {
+  MusicPlatform,
+  Track,
+  AudioFeatures,
   SearchParams,
   SpotifyArtist,
   ExtendedAudioFeatures,
   SoundProfile
 } from './types'
 import { SpotifyTrack, SpotifyAudioFeatures } from '../../models/spotify'
+import { calculateNameSimilarity } from '../../utils/stringMatching'
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1'
-
-/**
- * Calculate similarity between two strings (normalized name matching)
- * Returns a score from 0 (no match) to 1 (exact match)
- */
-function calculateNameSimilarity(name1: string, name2: string): number {
-  const normalize = (str: string) =>
-    str.toLowerCase()
-      .replace(/^the\s+/i, '')  // Remove leading "The"
-      .replace(/[^\w\s]/g, '')  // Remove punctuation
-      .trim()
-
-  const n1 = normalize(name1)
-  const n2 = normalize(name2)
-
-  // Exact match after normalization
-  if (n1 === n2) return 1.0
-
-  // One name contains the other (for cases like "X" vs "X-Ray Spex")
-  if (n1.includes(n2) || n2.includes(n1)) {
-    // Prefer shorter matches (e.g., "X" should match "X" not "X-Ray Spex")
-    const lengthRatio = Math.min(n1.length, n2.length) / Math.max(n1.length, n2.length)
-    return lengthRatio > 0.8 ? 0.9 : 0.6
-  }
-
-  // No good match
-  return 0
-}
 
 interface SpotifyArtistResponse {
   id: string
