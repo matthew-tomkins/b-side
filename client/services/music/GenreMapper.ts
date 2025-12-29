@@ -1,12 +1,10 @@
 /**
  * Genre Mapper - Maps between Every Noise, MusicBrainz, and Discogs genre taxonomies
  *
- * Source: genre-ontology.json (generated from Every Noise + our enriched data)
+ * Source: genre-ontology.json (loaded from server API)
  * License: MIT (Every Noise), CC BY-NC-SA (MusicBrainz), Fair Use (Discogs)
  * Attribution: Glenn McDonald (Every Noise at Once) - https://everynoise.com
  */
-
-import genreOntology from '../../data/genre-ontology.json'
 
 interface GenreOntologyEntry {
   canonical: string
@@ -44,18 +42,51 @@ interface GenreOntologyData {
 }
 
 export class GenreMapper {
-  private ontology: GenreOntologyData
-  private mbTagToGenre: Map<string, string> // MusicBrainz tag → canonical genre
-  private discogsToGenre: Map<string, string> // Discogs style → canonical genre
-  private aliasToGenre: Map<string, string> // Any alias → canonical genre
+  private ontology: GenreOntologyData | null = null
+  private mbTagToGenre: Map<string, string> = new Map() // MusicBrainz tag → canonical genre
+  private discogsToGenre: Map<string, string> = new Map() // Discogs style → canonical genre
+  private aliasToGenre: Map<string, string> = new Map() // Any alias → canonical genre
+  private loaded: boolean = false
 
   constructor() {
-    this.ontology = genreOntology as GenreOntologyData
+    // Constructor is now empty - use loadOntology() to initialize
+  }
 
-    // Build reverse lookup maps for fast mapping
-    this.mbTagToGenre = new Map()
-    this.discogsToGenre = new Map()
-    this.aliasToGenre = new Map()
+  /**
+   * Load genre ontology from server API
+   * Call this once before using the mapper
+   */
+  async loadOntology(): Promise<void> {
+    if (this.loaded) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/config/genre-ontology')
+      if (!response.ok) {
+        throw new Error('Failed to load genre ontology from server')
+      }
+
+      this.ontology = await response.json()
+      this.buildLookupMaps()
+      this.loaded = true
+
+      console.log('[GenreMapper] Ontology loaded from server')
+    } catch (error) {
+      console.error('[GenreMapper] Failed to load ontology:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Build reverse lookup maps for fast mapping
+   */
+  private buildLookupMaps(): void {
+    if (!this.ontology) return
+
+    this.mbTagToGenre.clear()
+    this.discogsToGenre.clear()
+    this.aliasToGenre.clear()
 
     for (const [canonical, entry] of Object.entries(this.ontology.genres)) {
       // Map MusicBrainz tags
@@ -125,6 +156,8 @@ export class GenreMapper {
    * Returns: [canonical, ...aliases, ...mbTags, ...discogsTags]
    */
   getSearchTerms(canonicalGenre: string): string[] {
+    if (!this.ontology) return []
+
     const entry = this.ontology.genres[canonicalGenre]
     if (!entry) return []
 
@@ -203,6 +236,8 @@ export class GenreMapper {
     children: string[]
     related: string[]
   } {
+    if (!this.ontology) return { children: [], related: [] }
+
     const entry = this.ontology.genres[canonicalGenre]
     if (!entry) return { children: [], related: [] }
 
@@ -213,6 +248,8 @@ export class GenreMapper {
    * Get typical countries for a genre
    */
   getTypicalCountries(canonicalGenre: string): string[] {
+    if (!this.ontology) return []
+
     const entry = this.ontology.genres[canonicalGenre]
     if (!entry) return []
 
@@ -223,6 +260,8 @@ export class GenreMapper {
    * Get stats for a genre (artist count)
    */
   getStats(canonicalGenre: string): { artist_count: number } | null {
+    if (!this.ontology) return null
+
     const entry = this.ontology.genres[canonicalGenre]
     if (!entry) return null
 
